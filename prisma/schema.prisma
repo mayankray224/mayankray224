@@ -1,0 +1,138 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String           @id @default(cuid())
+  name            String?
+  email           String           @unique
+  password        String?          // Hashed password for email/password credentials login
+  age             Int?
+  language        String           @default("English")
+  theme           String           @default("light")
+  createdAt       DateTime         @default(now())
+  
+  exams           Exam[]
+  subjects        Subject[]
+  moodCheckins    MoodCheckin[]
+  journalEntries  JournalEntry[]
+  conversations   Conversation[]
+  weeklyReports   WeeklyReport[]
+  copingStrategies CopingStrategy[]
+  crisisFlags     CrisisFlag[]
+  streaks         Streak[]
+}
+
+model Exam {
+  id        String   @id @default(cuid())
+  userId    String
+  examType  String   // NEET, JEE, UPSC, etc.
+  examDate  DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Subject {
+  id               String   @id @default(cuid())
+  userId           String
+  name             String
+  isComfortSubject Boolean  @default(false)
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MoodCheckin {
+  id              String   @id @default(cuid())
+  userId          String
+  moodText        String   // Text description of mood
+  stressScore     Int      // 0 - 100
+  confidenceScore Int      // 0 - 100
+  burnoutRisk     Int      // 0 - 100
+  moodScore       Int      // 0 - 100 (overall wellness)
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model JournalEntry {
+  id             String   @id @default(cuid())
+  userId         String
+  content        String   @db.Text
+  emotionSummary String?
+  tags           String[] // Next.js + PostgreSQL supports native scalar arrays
+  stressScore    Int      @default(50)
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Conversation {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  Message[]
+  createdAt DateTime  @default(now())
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  role           String       // user or assistant
+  content        String       @db.Text
+  language       String       @default("English")
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+}
+
+model WeeklyReport {
+  id            String   @id @default(cuid())
+  userId        String
+  reportContent String   @db.Text
+  generatedAt   DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CopingStrategy {
+  id           String   @id @default(cuid())
+  userId       String
+  strategyText String   @db.Text
+  helped       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Confession {
+  id        String     @id @default(cuid())
+  content   String     @db.Text
+  approved  Boolean    @default(true)
+  expiresAt DateTime
+  createdAt DateTime   @default(now())
+  reactions Reaction[]
+}
+
+model Reaction {
+  id           String     @id @default(cuid())
+  confessionId String
+  emoji        String     // e.g. "❤️", "🫂", "🙌", "💪"
+  count        Int        @default(1)
+  confession   Confession @relation(fields: [confessionId], references: [id], onDelete: Cascade)
+}
+
+model CrisisFlag {
+  id        String   @id @default(cuid())
+  userId    String
+  severity  String   // low, medium, high
+  source    String   // chat, journal, reports
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Streak {
+  id            String   @id @default(cuid())
+  userId        String
+  currentStreak Int      @default(0)
+  longestStreak Int      @default(0)
+  lastActive    DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

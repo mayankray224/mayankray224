@@ -1,0 +1,61 @@
+@import url('https://fonts.googleapis.com/css2?family=Hind:wght@300;400;500;600;700&family=Lato:ital,wght@0,100;0,300;0,400;0,700;1,300;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #FDF8F2;
+  --foreground: #2C2C2C;
+}
+
+/* Dark mode fallback based on class or media query */
+.dark,
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1A1A2E;
+    --foreground: #FDF8F2;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom styles for warm glassmorphic feel */
+.warm-shadow {
+  box-shadow: 0 8px 30px rgba(244, 164, 38, 0.06);
+}
+
+.dark .warm-shadow {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.card-handcrafted {
+  border: 1px solid #F5E6D3;
+  background-color: #FFFDFB;
+  border-radius: 1.25rem;
+}
+
+.dark .card-handcrafted {
+  border: 1px solid #32324D;
+  background-color: #252538;
+}
+
+/* Custom Scrollbar for better UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #E8A598;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #F4A426;
+}
