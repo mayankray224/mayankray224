@@ -15,6 +15,7 @@ import {
 
 // Helper to get active user ID from NextAuth session, with automatic Demo user fallback
 async function getUserId() {
+  if (!prisma) return "demo-user";
   try {
     const session = await getServerSession(authOptions);
     if (session?.user?.email) {
