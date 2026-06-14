@@ -1,16 +1,19 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Language } from "@/lib/translations";
+import bcrypt from "bcryptjs";
 
 export interface User {
-  id: string;
+  userId: string;
   name: string;
   email: string;
-  password?: string;
-  language?: string;
-  comfortSubject?: string;
-  examDate?: string;
-  onboardingStep?: number;
+  passwordHash?: string;
+  examType: string;
+  examDate: string;
+  comfortSubject: string;
+  language: Language;
+  onboardingCompleted: boolean;
+  isDemoUser: boolean;
 }
 
 export interface JournalEntry {
@@ -26,11 +29,11 @@ export interface JournalEntry {
 export interface MoodCheckin {
   id: string;
   userId: string;
+  stressScore: number; // 1-10
+  energyScore: number; // 1-10
+  sleepHours: number; // 1-12
+  confidenceScore: number; // 1-10
   moodText: string;
-  stressScore: number;
-  confidenceScore: number;
-  burnoutRisk: number;
-  moodScore: number;
   createdAt: string;
 }
 
@@ -45,81 +48,97 @@ export interface ChatMessage {
 export interface WeeklyReport {
   id: string;
   userId: string;
-  weekRange: string;
-  narrative: string;
-  stressScore: number;
-  createdAt: string;
+  reportContent: string;
+  generatedAt: string;
 }
 
 interface NazaraanaState {
-  // Localization & Theme
+  // Required Authentication/User Profile Fields
+  userId: string;
+  name: string;
+  email: string;
   language: Language;
-  setLanguage: (lang: Language) => void;
+  examType: string;
+  examDate: string;
+  comfortSubject: string;
+  onboardingCompleted: boolean;
+  isAuthenticated: boolean;
+  isDemoUser: boolean;
+
+  // Registered local users database
+  localUsers: User[];
+
+  // User Logs Data persistence
+  localJournals: JournalEntry[];
+  localMoodCheckins: MoodCheckin[];
+  localChatMessages: ChatMessage[];
+  localWeeklyReports: WeeklyReport[];
+  localConfessions: {
+    id: string;
+    content: string;
+    createdAt: string;
+    reactions: { emoji: string; count: number }[];
+  }[];
+
+  // UI state
   theme: "light" | "dark";
+  isCrisisFlagged: boolean;
+  preExamMode: boolean;
+  streakCount: number;
+
+  // Actions
+  setLanguage: (lang: Language) => void;
   toggleTheme: () => void;
   setTheme: (theme: "light" | "dark") => void;
-
-  // Active User session for Local/Offline Mode
-  currentUser: User | null;
-  setCurrentUser: (user: User | null) => void;
-  
-  // Registered local users
-  localUsers: User[];
-  addLocalUser: (user: User) => void;
-
-  // Offline local database backups
-  localJournals: JournalEntry[];
-  setLocalJournals: (journals: JournalEntry[]) => void;
-  addLocalJournal: (journal: JournalEntry) => void;
-
-  localMoodCheckins: MoodCheckin[];
-  setLocalMoodCheckins: (checkins: MoodCheckin[]) => void;
-  addLocalMoodCheckin: (checkin: MoodCheckin) => void;
-
-  localChatMessages: ChatMessage[];
-  setLocalChatMessages: (messages: ChatMessage[]) => void;
-  addLocalChatMessage: (message: ChatMessage) => void;
-
-  localWeeklyReports: WeeklyReport[];
-  setLocalWeeklyReports: (reports: WeeklyReport[]) => void;
-  addLocalWeeklyReport: (report: WeeklyReport) => void;
-
-  // Student Profile Onboarding Info (legacy sync fields)
-  userName: string;
-  setUserName: (name: string) => void;
-  selectedExams: string[];
-  setSelectedExams: (exams: string[]) => void;
-  comfortSubject: string;
-  setComfortSubject: (subject: string) => void;
-  examDate: string; // ISO String or YYYY-MM-DD
-  setExamDate: (date: string) => void;
-  
-  // Onboarding Step Tracker
-  onboardingStep: number;
-  setOnboardingStep: (step: number) => void;
-  resetOnboarding: () => void;
-
-  // Emotional Readiness & Flags
-  mentalReadinessScore: number;
-  setMentalReadinessScore: (score: number) => void;
-  streakCount: number;
-  setStreakCount: (count: number) => void;
-  isCrisisFlagged: boolean;
-  setIsCrisisFlagged: (flagged: boolean) => void;
-  preExamMode: boolean;
   setPreExamMode: (active: boolean) => void;
-  
-  // Reset all local session states
-  clearLocalData: () => void;
+  setIsCrisisFlagged: (flagged: boolean) => void;
+  setStreakCount: (count: number) => void;
+
+  // Auth Operations
+  registerUserLocal: (name: string, email: string, passwordPlain: string) => { success: boolean; error?: string };
+  loginUserLocal: (email: string, passwordPlain: string) => { success: boolean; error?: string };
+  loginDemoUser: () => void;
+  logoutUser: () => void;
+  completeOnboarding: (data: { name: string; examType: string; examDate: string; comfortSubject: string; language: Language }) => void;
+
+  // Data Operations
+  addJournal: (content: string, emotionSummary: string, tags: string[], stressScore: number) => void;
+  addCheckin: (stress: number, energy: number, sleep: number, confidence: number, text: string) => void;
+  addChatMessage: (role: "user" | "assistant", content: string) => void;
+  clearChat: () => void;
+  addWeeklyReport: (content: string) => void;
+  addConfession: (content: string) => { success: boolean; moderated?: boolean };
+  reactToConfession: (id: string, emoji: string) => void;
 }
 
 export const useStore = create<NazaraanaState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       // Defaults
+      userId: "",
+      name: "",
+      email: "",
       language: "English",
-      setLanguage: (language) => set({ language }),
+      examType: "",
+      examDate: "",
+      comfortSubject: "",
+      onboardingCompleted: false,
+      isAuthenticated: false,
+      isDemoUser: false,
+
+      localUsers: [],
+      localJournals: [],
+      localMoodCheckins: [],
+      localChatMessages: [],
+      localWeeklyReports: [],
+      localConfessions: [],
+
       theme: "light",
+      isCrisisFlagged: false,
+      preExamMode: false,
+      streakCount: 0,
+
+      setLanguage: (language) => set({ language }),
       toggleTheme: () =>
         set((state) => {
           const newTheme = state.theme === "light" ? "dark" : "light";
@@ -145,77 +164,252 @@ export const useStore = create<NazaraanaState>()(
           }
           return { theme };
         }),
-
-      currentUser: null,
-      setCurrentUser: (currentUser) => set({ currentUser }),
-      
-      localUsers: [],
-      addLocalUser: (user) => set((state) => ({ localUsers: [...state.localUsers, user] })),
-
-      localJournals: [],
-      setLocalJournals: (localJournals) => set({ localJournals }),
-      addLocalJournal: (journal) => set((state) => ({ localJournals: [journal, ...state.localJournals] })),
-
-      localMoodCheckins: [],
-      setLocalMoodCheckins: (localMoodCheckins) => set({ localMoodCheckins }),
-      addLocalMoodCheckin: (checkin) => set((state) => ({ localMoodCheckins: [checkin, ...state.localMoodCheckins] })),
-
-      localChatMessages: [],
-      setLocalChatMessages: (localChatMessages) => set({ localChatMessages }),
-      addLocalChatMessage: (message) => set((state) => ({ localChatMessages: [...state.localChatMessages, message] })),
-
-      localWeeklyReports: [],
-      setLocalWeeklyReports: (localWeeklyReports) => set({ localWeeklyReports }),
-      addLocalWeeklyReport: (report) => set((state) => ({ localWeeklyReports: [report, ...state.localWeeklyReports] })),
-
-      userName: "",
-      setUserName: (userName) => set({ userName }),
-      selectedExams: [],
-      setSelectedExams: (selectedExams) => set({ selectedExams }),
-      comfortSubject: "",
-      setComfortSubject: (comfortSubject) => set({ comfortSubject }),
-      examDate: "",
-      setExamDate: (examDate) => set({ examDate }),
-
-      onboardingStep: 1,
-      setOnboardingStep: (onboardingStep) => set({ onboardingStep }),
-      resetOnboarding: () =>
-        set({
-          onboardingStep: 1,
-          userName: "",
-          selectedExams: [],
-          comfortSubject: "",
-          examDate: "",
-        }),
-
-      mentalReadinessScore: 75, // Initial default
-      setMentalReadinessScore: (mentalReadinessScore) => set({ mentalReadinessScore }),
-      streakCount: 3, // Default active streak
-      setStreakCount: (streakCount) => set({ streakCount }),
-      isCrisisFlagged: false,
-      setIsCrisisFlagged: (isCrisisFlagged) => set({ isCrisisFlagged }),
-      preExamMode: false,
       setPreExamMode: (preExamMode) => set({ preExamMode }),
+      setIsCrisisFlagged: (isCrisisFlagged) => set({ isCrisisFlagged }),
+      setStreakCount: (streakCount) => set({ streakCount }),
 
-      clearLocalData: () => set({
-        currentUser: null,
-        localJournals: [],
-        localMoodCheckins: [],
-        localChatMessages: [],
-        localWeeklyReports: [],
-        userName: "",
-        selectedExams: [],
-        comfortSubject: "",
-        examDate: "",
-        onboardingStep: 1,
-        mentalReadinessScore: 75,
-        streakCount: 3,
-        isCrisisFlagged: false,
-        preExamMode: false,
-      }),
+      // Local Registration
+      registerUserLocal: (name, email, passwordPlain) => {
+        const users = get().localUsers;
+        const exists = users.some((u) => u.email.toLowerCase() === email.toLowerCase());
+        if (exists) {
+          return { success: false, error: "An account with this email already exists." };
+        }
+
+        const passwordHash = bcrypt.hashSync(passwordPlain, 10);
+        const newUser: User = {
+          userId: "user-" + Math.random().toString(36).substring(2, 9),
+          name,
+          email,
+          passwordHash,
+          examType: "",
+          examDate: "",
+          comfortSubject: "",
+          language: "English",
+          onboardingCompleted: false,
+          isDemoUser: false,
+        };
+
+        set({
+          localUsers: [...users, newUser],
+          userId: newUser.userId,
+          name: newUser.name,
+          email: newUser.email,
+          language: newUser.language,
+          examType: "",
+          examDate: "",
+          comfortSubject: "",
+          onboardingCompleted: false,
+          isAuthenticated: true,
+          isDemoUser: false,
+          streakCount: 0,
+        });
+
+        return { success: true };
+      },
+
+      // Local Login
+      loginUserLocal: (email, passwordPlain) => {
+        const users = get().localUsers;
+        const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase());
+        if (!user || !user.passwordHash) {
+          return { success: false, error: "No account found with this email." };
+        }
+
+        const isValid = bcrypt.compareSync(passwordPlain, user.passwordHash);
+        if (!isValid) {
+          return { success: false, error: "Invalid password." };
+        }
+
+        set({
+          userId: user.userId,
+          name: user.name,
+          email: user.email,
+          language: user.language,
+          examType: user.examType,
+          examDate: user.examDate,
+          comfortSubject: user.comfortSubject,
+          onboardingCompleted: user.onboardingCompleted,
+          isAuthenticated: true,
+          isDemoUser: false,
+        });
+
+        return { success: true };
+      },
+
+      // Demo User Activation
+      loginDemoUser: () => {
+        set({
+          userId: "demo-user-id",
+          name: "",
+          email: "demo@nazaraana.ai",
+          language: "English",
+          examType: "",
+          examDate: "",
+          comfortSubject: "",
+          onboardingCompleted: false,
+          isAuthenticated: true,
+          isDemoUser: true,
+          streakCount: 0,
+        });
+      },
+
+      // Logout
+      logoutUser: () => {
+        set({
+          userId: "",
+          name: "",
+          email: "",
+          examType: "",
+          examDate: "",
+          comfortSubject: "",
+          onboardingCompleted: false,
+          isAuthenticated: false,
+          isDemoUser: false,
+          localChatMessages: [],
+          isCrisisFlagged: false,
+        });
+      },
+
+      // Complete Onboarding
+      completeOnboarding: (data) => {
+        const currentUserId = get().userId;
+        set({
+          name: data.name,
+          examType: data.examType,
+          examDate: data.examDate,
+          comfortSubject: data.comfortSubject,
+          language: data.language,
+          onboardingCompleted: true,
+          streakCount: 1,
+        });
+
+        // Sync back into localUsers list if not demo user
+        if (!get().isDemoUser) {
+          const updatedUsers = get().localUsers.map((u) => {
+            if (u.userId === currentUserId) {
+              return {
+                ...u,
+                name: data.name,
+                examType: data.examType,
+                examDate: data.examDate,
+                comfortSubject: data.comfortSubject,
+                language: data.language,
+                onboardingCompleted: true,
+              };
+            }
+            return u;
+          });
+          set({ localUsers: updatedUsers });
+        }
+      },
+
+      // Data Operations
+      addJournal: (content, emotionSummary, tags, stressScore) => {
+        const newEntry: JournalEntry = {
+          id: "journal-" + Math.random().toString(36).substring(2, 9),
+          userId: get().userId,
+          content,
+          emotionSummary,
+          tags,
+          stressScore,
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          localJournals: [newEntry, ...state.localJournals],
+        }));
+      },
+
+      addCheckin: (stress, energy, sleep, confidence, text) => {
+        const newCheckin: MoodCheckin = {
+          id: "checkin-" + Math.random().toString(36).substring(2, 9),
+          userId: get().userId,
+          stressScore: stress,
+          energyScore: energy,
+          sleepHours: sleep,
+          confidenceScore: confidence,
+          moodText: text,
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          localMoodCheckins: [newCheckin, ...state.localMoodCheckins],
+        }));
+      },
+
+      addChatMessage: (role, content) => {
+        const newMessage: ChatMessage = {
+          id: "msg-" + Math.random().toString(36).substring(2, 9),
+          userId: get().userId,
+          role,
+          content,
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          localChatMessages: [...state.localChatMessages, newMessage],
+        }));
+      },
+
+      clearChat: () => {
+        set({ localChatMessages: [] });
+      },
+
+      addWeeklyReport: (reportContent) => {
+        const newReport: WeeklyReport = {
+          id: "report-" + Math.random().toString(36).substring(2, 9),
+          userId: get().userId,
+          reportContent,
+          generatedAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          localWeeklyReports: [newReport, ...state.localWeeklyReports],
+        }));
+      },
+
+      addConfession: (content) => {
+        // Claude moderation simulation
+        const crisisKeywords = ["suicide", "kill myself", "end it", "atmahathya", "mar jau"];
+        const hasCrisis = crisisKeywords.some((word) => content.toLowerCase().includes(word));
+        if (hasCrisis) {
+          set({ isCrisisFlagged: true });
+          return { success: false, moderated: true };
+        }
+
+        const newConfession = {
+          id: "confession-" + Math.random().toString(36).substring(2, 9),
+          content,
+          createdAt: new Date().toISOString(),
+          reactions: [
+            { emoji: "🫂", count: 0 },
+            { emoji: "❤️", count: 0 },
+            { emoji: "💪", count: 0 },
+            { emoji: "🙌", count: 0 },
+          ],
+        };
+
+        set((state) => ({
+          localConfessions: [newConfession, ...state.localConfessions],
+        }));
+
+        return { success: true };
+      },
+
+      reactToConfession: (id, emoji) => {
+        const updated = get().localConfessions.map((c) => {
+          if (c.id === id) {
+            return {
+              ...c,
+              reactions: c.reactions.map((r) =>
+                r.emoji === emoji ? { ...r, count: r.count + 1 } : r
+              ),
+            };
+          }
+          return c;
+        });
+        set({ localConfessions: updated });
+      },
     }),
     {
-      name: "nazaraana-store", // Persists state in localstorage
+      name: "nazaraana-store",
     }
   )
 );

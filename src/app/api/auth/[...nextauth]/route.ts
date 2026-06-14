@@ -1,6 +1,9 @@
-import NextAuth from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { NextRequest } from "next/server";
 
-const handler = NextAuth(authOptions);
+export async function GET(req: NextRequest) {
+  return new Response("NextAuth is deprecated. Using LocalStorage session provider instead.", { status: 200 });
+}
 
-export { handler as GET, handler as POST };
+export async function POST(req: NextRequest) {
+  return new Response("NextAuth is deprecated. Using LocalStorage session provider instead.", { status: 200 });
+}

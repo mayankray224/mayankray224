@@ -4,26 +4,18 @@ import React, { useState, useEffect } from "react";
 import AppShell from "@/components/shared/AppShell";
 import { useStore } from "@/store/useStore";
 import { TRANSLATIONS } from "@/lib/translations";
-import { createJournalEntry, fetchJournalEntries } from "@/app/actions";
-import { authService } from "@/lib/authService";
-import { BookOpen, Sparkles, Calendar, Tag, ShieldAlert, Award } from "lucide-react";
+import { createJournalEntry } from "@/app/actions";
+import { BookOpen, Calendar, Tag, ShieldAlert, Award } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface Journal {
-  id: string;
-  content: string;
-  emotionSummary: string | null;
-  tags: string[];
-  stressScore: number;
-  createdAt: Date | string;
-}
+import { useHydration } from "@/hooks/useHydration";
+import { PageSkeleton } from "@/components/shared/SkeletonLoader";
 
 export default function JournalPage() {
   const store = useStore();
+  const hydrated = useHydration();
   const t = TRANSLATIONS[store.language] || TRANSLATIONS.English;
 
   const [content, setContent] = useState("");
-  const [journals, setJournals] = useState<Journal[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   
@@ -31,24 +23,8 @@ export default function JournalPage() {
   const [latestAnalysis, setLatestAnalysis] = useState<any>(null);
   const [showCelebration, setShowCelebration] = useState(false);
 
-  // Load history
-  useEffect(() => {
-    async function loadJournals() {
-      try {
-        const isDb = await authService.isDbAvailable();
-        if (isDb) {
-          const history = await fetchJournalEntries();
-          setJournals(history);
-        } else {
-          setJournals(store.localJournals as any[]);
-        }
-      } catch (err) {
-        console.warn("Failed to load journals from database, using local backup:", err);
-        setJournals(store.localJournals as any[]);
-      }
-    }
-    loadJournals();
-  }, [store.localJournals]);
+  // Filter journals for the logged-in user
+  const userJournals = store.localJournals.filter((j) => j.userId === store.userId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,88 +37,61 @@ export default function JournalPage() {
     setLatestAnalysis(null);
 
     try {
-      const isDb = await authService.isDbAvailable();
-      let res;
-      
-      if (isDb) {
-        res = await createJournalEntry(content);
-        // Also cache locally
-        store.addLocalJournal({
-          id: res.entry.id,
-          userId: store.currentUser?.id || "demo-user",
-          content: res.entry.content,
-          emotionSummary: res.entry.emotionSummary,
-          tags: res.entry.tags,
-          stressScore: res.entry.stressScore,
-          createdAt: new Date(res.entry.createdAt).toISOString()
-        });
-      } else {
-        // Database is offline: process locally
-        const stressVal = Math.floor(Math.random() * 40) + 40;
-        const mockAnalysis = {
-          stressScore: stressVal,
-          burnoutRisk: Math.min(100, stressVal + 5),
-          emotionSummary: "Logged offline. BhalAI is holding space for you.",
-          tags: ["local-diary", "offline"]
-        };
-        const newLocal = {
-          id: "journal-" + Math.random().toString(36).substring(2, 9),
-          userId: store.currentUser?.id || "demo-user",
-          content,
-          emotionSummary: mockAnalysis.emotionSummary,
-          tags: mockAnalysis.tags,
-          stressScore: mockAnalysis.stressScore,
-          createdAt: new Date().toISOString()
-        };
-        store.addLocalJournal(newLocal);
-        res = {
-          entry: newLocal,
-          analysis: mockAnalysis,
-          isCrisis: content.toLowerCase().includes("suicide") || content.toLowerCase().includes("kill myself") || content.toLowerCase().includes("end it")
-        };
-      }
-      
-      // Update journal list
-      setJournals((prev) => [res.entry as any, ...prev]);
-      
-      // Show BhalAI analysis result cards
-      setLatestAnalysis(res.analysis);
-      
-      // Update store states
-      store.setMentalReadinessScore(Math.max(15, 100 - res.analysis.stressScore));
-      store.setStreakCount(store.streakCount + 1);
+      // Pass the user's name and details for contextual Claude analysis
+      const res = await createJournalEntry({
+        content: content.trim(),
+        name: store.name,
+        examType: store.examType
+      });
 
-      // Trigger crisis warning if flagged
-      if (res.isCrisis) {
-        store.setIsCrisisFlagged(true);
+      if (res && res.analysis) {
+        // Save to Zustand store
+        store.addJournal(
+          content.trim(),
+          res.analysis.emotionSummary,
+          res.analysis.tags || [],
+          res.analysis.stressScore || 50
+        );
+
+        setLatestAnalysis(res.analysis);
+
+        // Trigger crisis support warnings if flagged by Claude
+        if (res.isCrisis) {
+          store.setIsCrisisFlagged(true);
+        } else {
+          setShowCelebration(true);
+          setTimeout(() => setShowCelebration(false), 5000);
+        }
+
+        // Reset editor
+        setContent("");
       } else {
-        // Show streak milestones
-        setShowCelebration(true);
-        setTimeout(() => setShowCelebration(false), 5000);
+        throw new Error("Unable to analyze journal entry.");
       }
-      
-      // Reset editor
-      setContent("");
     } catch (err: any) {
-      setError("Unable to process entry. Logging to local storage.");
-      
-      // Fallback local logging
-      const newLocal = {
-        id: "journal-fallback-" + Math.random().toString(36).substring(2, 9),
-        userId: store.currentUser?.id || "demo-user",
-        content,
-        emotionSummary: "Logged offline.",
-        tags: ["local-diary"],
-        stressScore: 65,
-        createdAt: new Date().toISOString()
+      console.warn("Claude journal analysis failed, saving locally with fallback metrics:", err);
+      // Fallback offline processing
+      const stressVal = 50;
+      const fallbackAnalysis = {
+        stressScore: stressVal,
+        burnoutRisk: stressVal,
+        emotionSummary: "Journal entry logged successfully. Keep journaling to track your progress.",
+        tags: ["journaled", "offline"]
       };
-      store.addLocalJournal(newLocal);
-      setJournals((prev) => [newLocal as any, ...prev]);
+
+      store.addJournal(content.trim(), fallbackAnalysis.emotionSummary, fallbackAnalysis.tags, fallbackAnalysis.stressScore);
+      setLatestAnalysis(fallbackAnalysis);
       setContent("");
+      setShowCelebration(true);
+      setTimeout(() => setShowCelebration(false), 5000);
     } finally {
       setLoading(false);
     }
   };
+
+  if (!hydrated) {
+    return <PageSkeleton />;
+  }
 
   return (
     <AppShell>
@@ -173,22 +122,23 @@ export default function JournalPage() {
             </div>
 
             {error && (
-              <div className="p-3 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl text-xs flex items-center gap-1.5">
-                <ShieldAlert className="w-4 h-4" />
+              <div className="p-3 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl text-xs flex items-center gap-1.5" role="alert">
+                <ShieldAlert className="w-4 h-4" aria-hidden="true" />
                 <span>{error}</span>
               </div>
             )}
 
             <div className="relative">
               <textarea
-                placeholder="Release your stress... How is JEE/NEET study going? Are tests causing fear? Write whatever is on your mind..."
+                placeholder="Release your stress... How is study going? Are tests causing fear? Write whatever is on your mind..."
                 value={content}
                 onChange={(e) => {
                   setContent(e.target.value);
                   setError("");
                 }}
                 disabled={loading}
-                className="w-full h-56 p-4 bg-warm-bg/30 dark:bg-dark-bg/20 border border-warm-border dark:border-dark-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary text-warm-text dark:text-white text-sm leading-relaxed resize-none"
+                className="w-full h-56 p-4 bg-warm-bg/30 dark:bg-dark-bg/20 border border-warm-border dark:border-dark-border rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-warm-text dark:text-white text-sm leading-relaxed resize-none"
+                aria-label="Journal Content"
               />
             </div>
 
@@ -199,14 +149,14 @@ export default function JournalPage() {
               <button
                 type="submit"
                 disabled={loading || !content.trim()}
-                className="py-3 px-6 bg-secondary hover:bg-secondary-dark text-white rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50 disabled:scale-100 hover:-translate-y-0.5"
+                className="py-3 px-6 bg-secondary hover:bg-secondary-dark text-white rounded-xl text-xs font-bold transition-all shadow-md disabled:opacity-50 disabled:scale-100 hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-secondary"
               >
                 {loading ? "BhalAI is reading..." : "Release Thoughts"}
               </button>
             </div>
           </form>
 
-          {/* Dynamic AI Analysis Feedback Drawer */}
+          {/* Dynamic AI Analysis Feedback Card */}
           <AnimatePresence>
             {latestAnalysis && (
               <motion.div
@@ -216,7 +166,7 @@ export default function JournalPage() {
                 className="bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-100 dark:border-emerald-900/30 p-6 rounded-3xl space-y-4"
               >
                 <div className="flex items-center gap-2 text-secondary-dark">
-                  <Sparkles className="w-5 h-5" />
+                  <Award className="w-5 h-5 text-secondary" aria-hidden="true" />
                   <h3 className="font-bold text-sm uppercase tracking-wider">BhalAI Reflection Analysis</h3>
                 </div>
 
@@ -231,12 +181,12 @@ export default function JournalPage() {
                   </div>
                   <div>
                     <div className="text-[10px] text-warm-text/50 uppercase font-bold tracking-wider font-lato">Burnout risk</div>
-                    <div className="text-xl font-extrabold text-warm-text font-lato">{latestAnalysis.burnoutRisk}/100</div>
+                    <div className="text-xl font-extrabold text-warm-text font-lato">{latestAnalysis.stressScore}/100</div>
                   </div>
                   <div className="col-span-2 md:col-span-1">
                     <div className="text-[10px] text-warm-text/50 uppercase font-bold tracking-wider font-lato">Extracted Tags</div>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {latestAnalysis.tags.map((tag: string) => (
+                      {latestAnalysis.tags && latestAnalysis.tags.map((tag: string) => (
                         <span key={tag} className="px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-300 text-[10px] font-semibold">
                           #{tag}
                         </span>
@@ -257,7 +207,7 @@ export default function JournalPage() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="bg-amber-50 border border-amber-200 text-amber-800 p-4 rounded-2xl flex items-center gap-3"
               >
-                <Award className="w-7 h-7 text-amber-500 flex-shrink-0 animate-bounce" />
+                <Award className="w-7 h-7 text-amber-500 flex-shrink-0 animate-bounce" aria-hidden="true" />
                 <div>
                   <h4 className="font-bold text-sm">Compassionate Streak Preserved! 🌟</h4>
                   <p className="text-xs text-amber-700 leading-relaxed">
@@ -269,24 +219,24 @@ export default function JournalPage() {
           </AnimatePresence>
         </div>
 
-        {/* Right Side: Timeline of past logs (timeline view) */}
+        {/* Right Side: Timeline of past logs */}
         <div className="space-y-4">
           <h3 className="font-bold text-lg text-warm-text dark:text-white">Past Journal Timeline</h3>
           
-          {journals.length === 0 ? (
+          {userJournals.length === 0 ? (
             <div className="bg-[#FFFDFB] dark:bg-dark-card border border-warm-border dark:border-dark-border p-6 rounded-2xl text-center text-warm-text/50 text-xs">
               No entries logged yet. Write your first thoughts above to kickstart the timeline.
             </div>
           ) : (
             <div className="space-y-4 max-h-[64vh] overflow-y-auto pr-1">
-              {journals.map((journal) => (
+              {userJournals.map((journal) => (
                 <div
                   key={journal.id}
                   className="bg-[#FFFDFB] dark:bg-dark-card border border-warm-border dark:border-dark-border p-4 rounded-2xl space-y-3 shadow-sm hover:shadow-md transition-all relative"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-warm-text/50 dark:text-gray-400 text-[10px] font-bold uppercase font-lato">
-                      <Calendar className="w-3.5 h-3.5" />
+                      <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
                       <span>
                         {new Date(journal.createdAt).toLocaleDateString([], {
                           month: "short",
@@ -313,7 +263,7 @@ export default function JournalPage() {
 
                   {journal.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 items-center">
-                      <Tag className="w-3 h-3 text-warm-text/40" />
+                      <Tag className="w-3 h-3 text-warm-text/40" aria-hidden="true" />
                       {journal.tags.map((tag) => (
                         <span key={tag} className="text-[9px] bg-warm-bg dark:bg-dark-bg text-warm-text/60 dark:text-gray-300 px-2 py-0.5 rounded-md font-semibold">
                           {tag}
