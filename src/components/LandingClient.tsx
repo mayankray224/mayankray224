@@ -84,7 +84,7 @@ export default function LandingClient() {
           if (freshStore.onboardingCompleted) {
             router.push("/dashboard");
           } else {
-            router.push("/onboarding");
+            router.push("/welcome");
           }
         }, 800);
       } else {
@@ -119,9 +119,9 @@ export default function LandingClient() {
     try {
       const res = await authService.register(fullName.trim(), email.trim(), password);
       if (res.success) {
-        setSuccess("Account created successfully! Let's start onboarding.");
+        setSuccess("Account created successfully! Let's get you set up.");
         setTimeout(() => {
-          router.push("/onboarding");
+          router.push("/welcome");
         }, 800);
       } else {
         setError(res.error || "Could not register account.");
@@ -138,9 +138,9 @@ export default function LandingClient() {
     setSuccess("");
     setLoading(true);
     authService.login("demo@nazaraana.ai", "demo123");
-    setSuccess("Entering Demo Mode... Please set up your profile.");
+    setSuccess("Entering Demo Mode... Let\'s get started.");
     setTimeout(() => {
-      router.push("/onboarding");
+      router.push("/welcome");
     }, 800);
   };
 

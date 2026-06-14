@@ -1,81 +1,255 @@
-# Nazaraana (नज़राना) - Student Mental Wellness Companion
+<p align="center">
+  <img src="public/nazaraana-logo.png" alt="Nazaraana Logo" width="80" />
+</p>
 
-Nazaraana is a warm, culturally resonant, GenAI-powered emotional wellness companion tailored specifically for Indian students preparing for high-stakes examinations (JEE, NEET, UPSC, Board Exams, etc.). 
+<h1 align="center">Nazaraana (नज़राना)</h1>
+<p align="center"><strong>GenAI-powered emotional wellness companion for Indian exam aspirants.</strong></p>
 
-By offering BhalAI—an empathetic, multilingual conversational buddy—alongside dynamic stress tracking, private diary journals, and anonymous confessions, Nazaraana helps carry the mental and emotional load of exam preparation.
-
----
-
-## 🚀 Key Highlights & Architecture
-
-### 1. 100% Zero-Configuration Local Development
-- **No Database Needed:** All authentication, user profiles, session tokens, daily check-ins, journal diaries, chat history, and reports run entirely on client-side state persisted in `localStorage`. 
-- **No OAuth/Docker/SMTP setups:** Decoupled from PostgreSQL, Prisma, Google OAuth, and email OTP verification. 
-- **Offline Continuity:** Fully interactive without external databases.
-
-### 2. Personalization Engine
-- **Wellness Metrics:** Mood, stress, confidence, burnout risk, and mental readiness indices are mathematically derived in real-time using actual user inputs (daily check-ins and journal logs). No mock or randomized scores.
-- **Supportive Pre-Exam Protocol:** Automatically activates within 72 hours of the user's exam date, swapping active study recommendations with guided box-breathing exercises, positive affirmations, and calming visual tasks.
-
-### 3. BhalAI Memory Layer
-- Claude remembers your target exam, comfort subjects, recent check-ins, and journal entries. Responses reference past events (e.g. SSC mock test anxiety) to create an empathetic, continuous support relationship.
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-15.3.4-black?logo=nextdotjs" />
+  <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" />
+  <img src="https://img.shields.io/badge/Anthropic-Claude-orange?logo=anthropic" />
+  <img src="https://img.shields.io/badge/Tests-Vitest-6E9F18?logo=vitest" />
+  <img src="https://img.shields.io/badge/License-MIT-green" />
+</p>
 
 ---
 
-## 🛠️ Local Setup Instructions
+## 📖 Overview
 
-Ensure you have [Node.js](https://nodejs.org/) installed on your machine.
+Nazaraana is a warm, culturally resonant emotional wellness companion tailored for students preparing for high-stakes Indian examinations — JEE, NEET, UPSC, CUET, Board Exams, and more.
 
-### Step 1: Install Dependencies
+By pairing **BhalAI** — an empathetic, multilingual AI companion — with dynamic stress tracking, private journal analysis, and a live wellness heatmap, Nazaraana helps carry the invisible mental load of exam preparation.
+
+**India produces 2.5M+ JEE aspirants and 2M+ NEET aspirants annually. Existing tools track productivity. Nazaraana tracks wellbeing.**
+
+---
+
+## ✨ Features
+
+### 🤖 BhalAI — Your Wellness Companion
+- Warm, maternal conversational AI modelled on the "badi didi" archetype
+- Full **Hinglish / multilingual** support (Hindi, English, Bengali, Tamil, Telugu, Marathi, Kannada, Malayalam, Gujarati)
+- **Memory Layer** — references your recent journals and check-ins in conversation
+- **Intent Classification** — 8 emotional pathways (Relationship, Coaching, Parent Pressure, Academic, Loneliness, Motivation, Greeting, Fallback)
+- **Crisis Escalation** — detects 35+ distress signals, instantly surfaces helpline numbers
+
+### 📊 Connected Wellness Engine
+- **Daily Mood Check-in** — stress, energy, sleep, and confidence sliders (1–10)
+- **Mann Ki Diary** — private journal with AI emotion/stress analysis and tag extraction
+- **Stress Heatmap** — 30-day colour-coded calendar (green → amber → red → crisis crimson)
+- **Weekly Wellness Report** — personalised narrative generated from your data
+- **Mental Readiness Score** — mathematically derived from stress, sleep, confidence, and journal frequency
+
+### 🛡️ Trust & Safety
+- **Trust-Building Onboarding** — Screen 0 explains what BhalAI can/cannot do before setup
+- **Privacy by Design** — all data stored in `localStorage` only; nothing leaves your device
+- **Zero-Config** — works fully offline without any database or API key
+
+### 🌐 Product Pages
+- `/about` — BhalAI origin story and capabilities
+- `/faq` — 10-question FAQ with collapsible answers
+- `/privacy` — Full privacy policy
+- `/terms` — Terms of use
+
+---
+
+## 🏗️ Architecture
+
+```
+Next.js 15 App Router
+        │
+        ▼
+Zustand Store (Single Source of Truth)
+  • User Profile + Auth
+  • Journals + AI analysis
+  • Mood Check-ins
+  • Chat History
+  • Crisis Flags
+  • Weekly Reports
+        │
+        ▼
+AI Layer (src/lib/ai/claude.ts)
+  • Offline mock mode (no API key needed)
+  • Real Claude 3.5 Sonnet (with ANTHROPIC_API_KEY)
+  • Crisis detection → helpline escalation
+  • Journal emotion analysis
+  • Weekly report generation
+        │
+        ▼
+localStorage (via Zustand persist middleware)
+```
+
+---
+
+## 🚀 Setup & Running Locally
+
+### Prerequisites
+- Node.js 18+
+- npm 9+
+
+### 1. Install dependencies
 ```bash
 npm install
 ```
 
-### Step 2: Configure Environment Variables
-Create a `.env` file in the project root:
-```env
-# Required for BhalAI Chat, Journal, and Reports Claude analysis
-ANTHROPIC_API_KEY=your_claude_api_key_here
+### 2. Configure environment (optional — for real AI)
+```bash
+cp .env.example .env
+# Add your Anthropic API key to enable real Claude responses
+# ANTHROPIC_API_KEY=your_key_here
+# Without it, the app runs in full offline mock mode
 ```
 
-### Step 3: Run Development Server
+### 3. Run the development server
 ```bash
 npm run dev
 ```
-Open **[http://localhost:3000](http://localhost:3000)** in your browser to interact with the application.
 
----
+Open [http://localhost:3000](http://localhost:3000) to view the app.
 
-## 🧪 Testing Coverage
-
-We use **Vitest** and **React Testing Library** to validate authentication, session persistence, onboarding wizard flows, and emotional metric calculations.
-
-To run the unit and integration tests:
+### 4. Build for production
 ```bash
-npm run test
+npm run build
+npm start
 ```
 
-Test files:
-- `src/store/useStore.test.ts` (Validates user registrations, password bcrypt verification, demo login, session persistence, and onboarding sync)
-- `src/lib/assessmentEngine.test.ts` (Validates dynamic calculations for stress scores, burnout risks, and readiness indices under poor/excellent metrics inputs)
+---
+
+## 🧪 Testing
+
+Nazaraana uses **Vitest** + **React Testing Library** for unit and integration tests.
+
+### Run all tests
+```bash
+npm test
+```
+
+### Test coverage
+
+| Test File | What It Tests |
+|-----------|--------------|
+| `src/store/useStore.test.ts` | User registration, login, session persistence, onboarding completion, demo login, logout |
+| `src/lib/ai/crisis.test.ts` | Crisis detection for 10+ phrase variants, journal analysis CRITICAL path, safe text non-flagging |
+| `src/lib/assessmentEngine.test.ts` | Stress score math, burnout risk, readiness score under poor/excellent/mixed conditions |
+
+### Test structure
+```
+src/
+  store/
+    useStore.test.ts         ← Auth flow tests
+  lib/
+    assessmentEngine.test.ts ← Wellness metric tests
+    ai/
+      crisis.test.ts         ← Crisis + journal analysis tests
+```
 
 ---
 
-## 📱 Core Feature Checklist
+## 🤖 AI Capabilities
 
-- **Screen 1 (Landing Page):** Welcome page with credential registration, login, and "Try Demo Experience" quick login.
-- **Screen 2-6 (Onboarding Wizard):** 5-step onboarding wizard gathering: Name, target exams checklist, preferred language (English, Hindi, Hinglish, Bengali, Marathi, etc.), comfort subject, and exam date. Enforced for all users.
-- **Screen 7 (Dashboard):** Dynamic personal greeting, exam countdown timer, mental readiness circle gauge, stress trend timeline, check-in log sliders, and study recommendation check-cards.
-- **Screen 8 (BhalAI Chat):** Conversational buddy with character-by-character streaming text, typing indicators, safety support flags, and contextual memory.
-- **Screen 9 (Mood Journal):** Writing area styled like standard writing paper, auto-tag categorization, stress score analysis, and entry timeline log.
-- **Screen 10 (Heatmap Calendar):** Color-coded daily workload stress squares with detail popups showing coping suggestions.
-- **Screen 11 (Weekly reflection):** Comprehensive weekly report containing supportive insights and a downloadable high-resolution graphics card for sharing.
-- **Screen 12 (Confession Wall):** Anonymous student message wall with Claude content moderation, emoji react buttons, and support counters.
-- **Screen 13 (Settings Configuration):** Quick toggle theme, change target exams, modify comfort subjects, adjust languages, and clear local storage databases.
+### Offline Mock Mode (default — no API key needed)
+- Full intent classification across 8 emotional categories
+- Keyword-based journal emotion analysis
+- Crisis detection with helpline escalation
+- Personalised responses using your store data (name, exam, comfort subject)
+
+### Real AI Mode (with `ANTHROPIC_API_KEY`)
+- Claude 3.5 Sonnet for nuanced, contextual conversations
+- Advanced journal analysis with structured JSON responses
+- AI-generated weekly wellness reports
+- Streaming character-by-character responses
 
 ---
 
-## ♿ Accessibility (WCAG AA Compliance)
-- **Keyboard Navigation:** Forms, sliders, inputs, dropdown options, and sidebar items support strict tab indexing and keyboard activation.
-- **Aria Labels:** Screen readers are supported via semantic DOM headers and `aria-label`/`aria-hidden` attributes.
-- **Contrast Ratios:** Curated color system (curated primary oranges and terracotta rose accents) conforms with WCAG contrast requirements under both light and dark display modes.
+## 🔒 Privacy & Security
+
+- **Zero server data** — all your journals, check-ins, and chat history live only in your browser's `localStorage`
+- **No analytics** — no tracking pixels, ad networks, or analytics SDKs
+- **Secure passwords** — bcrypt hashing with salt rounds = 10
+- **Crisis escalation** — real Indian helpline numbers surfaced immediately when distress is detected
+- **Next.js 15.3.4+** — latest patched version, no known CVEs, `X-Powered-By` header suppressed
+
+---
+
+## 🗺️ User Flow
+
+```
+Landing (/) → Register/Login
+      ↓
+Welcome Screen (/welcome)   ← "What BhalAI can/cannot do" + Privacy notice
+      ↓
+Onboarding Wizard (/onboarding)  ← Name, exam, language, comfort subject, date
+      ↓
+Dashboard (/dashboard)       ← Readiness score, check-in, study recommendations
+      ↓
+BhalAI Chat (/chat)          ← Streaming AI companion
+Mann Ki Diary (/journal)     ← Private journal + AI analysis
+Heatmap (/heatmap)           ← 30-day stress calendar
+Reports (/reports)           ← Weekly wellness narrative
+Confessions (/confessions)   ← Anonymous student wall
+Settings (/settings)         ← Profile, theme, language, data clear
+```
+
+---
+
+## ⚠️ Known Limitations
+
+- BhalAI is not a therapist and cannot provide medical advice
+- Offline mock mode responses are keyword-driven and may occasionally miss nuance
+- All data is cleared if the user clears browser storage
+- Real AI features require an Anthropic API key (not included)
+- next-auth v4 is used (v5 migration planned for next major version)
+
+---
+
+## 🛣️ Future Roadmap
+
+- 📱 **Native mobile app** (React Native, offline-first with SQLite)
+- 🧠 **Long-term trend prediction** using vector embeddings for burnout forecasting
+- 👥 **Community support circles** moderated by exam type
+- 📞 **Counsellor referral** when crisis threshold is repeatedly exceeded
+- 🎙️ **Voice journaling** via Web Speech API
+- 👨‍👩‍👧 **Parent companion module** to help families understand student stress
+
+---
+
+## 📄 Documentation
+
+- [Case Study](docs/case-study.md) — Full product case study (problem, research, architecture, AI strategy, challenges)
+- [Privacy Policy](/privacy) — Data handling and user rights
+- [Terms of Use](/terms) — Usage terms and disclaimers
+- [About BhalAI](/about) — Capabilities, limitations, and origin story
+- [FAQ](/faq) — 10 common questions answered
+
+---
+
+## 🚨 Crisis Support
+
+If you or someone you know is in distress:
+
+- **iCall**: 9152987821 (Mon–Sat, 8am–10pm)
+- **Vandrevala Foundation**: 1860-2662-345 (24/7)
+- **Emergency Services**: 112
+
+---
+
+## ♿ Accessibility
+
+- WCAG AA colour contrast compliance
+- Full keyboard navigation support
+- ARIA labels and semantic HTML throughout
+- Screen reader compatible
+
+---
+
+## 📜 License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+<p align="center">
+  Built with ❤️ for every student who studies alone at 2am.<br/>
+  <em>Nazaraana believes every student deserves to be heard.</em>
+</p>

@@ -68,10 +68,13 @@ export async function generateChatResponse(
     
     // Check for crisis terms
     const crisisKeywords = [
-      "suicide", "self harm", "end my life", "kill myself", "better off dead", 
+      "suicide", "self harm", "self-harm", "end my life", "kill myself", "better off dead",
       "marna chahta", "want to die", "ending it all", "give up on life", "can't continue",
       "want to end it", "don't want to live", "atmahathya", "mar jau", "mar jana", "suicidal",
-      "harm myself", "no reason to live"
+      "harm myself", "no reason to live", "life is meaningless", "hopelessness", "feel hopeless",
+      "giving up completely", "no point in living", "can't go on", "feels pointless",
+      "end it all", "no reason to live", "worthless existence", "ending my life",
+      "disappear forever", "no way out", "done with everything", "not worth living"
     ];
     const hasCrisis = matchKeywords(userText, crisisKeywords);
     if (hasCrisis) {
@@ -509,22 +512,37 @@ export async function detectCrisis(text: string): Promise<{
   const crisisKeywords = [
     "suicide",
     "self harm",
+    "self-harm",
     "end my life",
+    "ending my life",
     "kill myself",
     "better off dead",
     "marna chahta",
     "want to die",
     "ending it all",
+    "end it all",
     "give up on life",
+    "giving up completely",
     "can't continue",
+    "can't go on",
     "want to end it",
     "don't want to live",
+    "not worth living",
     "atmahathya",
     "mar jau",
     "mar jana",
     "suicidal",
     "harm myself",
-    "no reason to live"
+    "no reason to live",
+    "life is meaningless",
+    "hopelessness",
+    "feel hopeless",
+    "no point in living",
+    "feels pointless",
+    "worthless existence",
+    "disappear forever",
+    "no way out",
+    "done with everything"
   ];
   const matched = crisisKeywords.some((keyword) => lowerText.includes(keyword));
 

@@ -106,17 +106,27 @@ export default function HeatmapPage() {
 
   const gridDays = getGridDays();
 
-  const getStressColor = (score: number) => {
+  const isCrisisDay = (day: { stressScore: number; journals?: any[] }) => {
+    if (day.stressScore >= 90) return true;
+    return (day.journals || []).some(
+      (j: any) => Array.isArray(j.tags) && j.tags.includes("crisis")
+    );
+  };
+
+  const getStressColor = (score: number, journals?: any[]) => {
+    const crisis = isCrisisDay({ stressScore: score, journals });
     if (score === 0) return "bg-gray-100 dark:bg-dark-bg/60 border border-warm-border/30 dark:border-dark-border text-transparent";
+    if (crisis) return "bg-[#7f1d1d] dark:bg-[#991b1b] text-white hover:scale-105 ring-2 ring-red-300 animate-pulse"; // Deep crimson — Crisis
     if (score <= 20) return "bg-[#1b5e20] dark:bg-[#2e7d32] text-white hover:scale-105"; // Deep Green
     if (score <= 40) return "bg-[#81c784] dark:bg-[#4caf50] text-gray-800 dark:text-white hover:scale-105"; // Light Green
     if (score <= 60) return "bg-[#ffb74d] dark:bg-[#ff9800] text-gray-800 dark:text-white hover:scale-105"; // Amber
     if (score <= 80) return "bg-[#ff7043] dark:bg-[#f4511e] text-white hover:scale-105"; // Orange
-    return "bg-[#c62828] dark:bg-[#d32f2f] text-white hover:scale-105 animate-pulse"; // Terracotta Red (burnout/crisis)
+    return "bg-[#c62828] dark:bg-[#d32f2f] text-white hover:scale-105 animate-pulse"; // Terracotta Red (burnout)
   };
 
-  const getSeverityText = (score: number) => {
+  const getSeverityText = (score: number, journals?: any[]) => {
     if (score === 0) return "No entries";
+    if (isCrisisDay({ stressScore: score, journals })) return "⚠️ Crisis Day — You are not alone. Please reach out.";
     if (score <= 20) return "Deep Green (Healthy Study Flow)";
     if (score <= 40) return "Light Green (Active Prep)";
     if (score <= 60) return "Yellow (Moderate Anxiety)";
@@ -124,8 +134,11 @@ export default function HeatmapPage() {
     return "Terracotta Red (Severe Distress / Burnout)";
   };
 
-  const getCopingAdvice = (score: number) => {
+  const getCopingAdvice = (score: number, journals?: any[]) => {
     if (score === 0) return "Perform your daily check-in to assess your stress metrics today.";
+    if (isCrisisDay({ stressScore: score, journals })) {
+      return "It sounds like this was an extremely difficult day. You are not alone and you do not have to carry this alone. Please reach out: iCall 9152987821 · Vandrevala Foundation 1860-2662-345.";
+    }
     if (score < 40) return "Your stress level is healthy. Keep studying using clean 45-minute cycles and hydrate.";
     if (score < 60) return "Moderate stress detected. Spend 20 minutes reviewing a comfort subject to regain core confidence.";
     if (score < 80) return "High workload tension. Please step away from social media, take a 10-minute walk, and listen to calming music.";
@@ -193,7 +206,7 @@ export default function HeatmapPage() {
                       key={day.date}
                       onClick={() => setSelectedDay(day)}
                       className={`w-10 h-10 rounded-xl transition-all duration-150 relative cursor-pointer shadow-sm focus:outline-none focus:ring-2 focus:ring-primary ${getStressColor(
-                        day.stressScore
+                        day.stressScore, day.journals
                       )}`}
                       aria-label={`${day.date}: Stress score is ${day.stressScore || "No Logs"}`}
                     >
@@ -314,7 +327,7 @@ export default function HeatmapPage() {
               <div className="space-y-4">
                 <div className="flex justify-between items-center p-3 bg-warm-bg/50 dark:bg-dark-bg/40 border border-warm-border dark:border-dark-border/60 rounded-xl">
                   <span className="text-xs font-bold text-warm-text/60">Average Stress Level</span>
-                  <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold text-white ${getStressColor(selectedDay.stressScore)}`}>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-extrabold text-white ${getStressColor(selectedDay.stressScore, selectedDay.journals)}`}>
                     {selectedDay.stressScore === 0 ? "No Logs" : `Score: ${selectedDay.stressScore}`}
                   </span>
                 </div>
