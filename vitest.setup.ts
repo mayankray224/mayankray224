@@ -1,10 +1,11 @@
 import "@testing-library/jest-dom";
+import { vi } from "vitest";
 
 // Mock matchMedia for recharts/framer motion if needed
 if (typeof window !== "undefined") {
   Object.defineProperty(window, "matchMedia", {
     writable: true,
-    value: vi.fn().mockImplementation((query) => ({
+    value: vi.fn().mockImplementation((query: string) => ({
       matches: false,
       media: query,
       onchange: null,

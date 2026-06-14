@@ -52,7 +52,7 @@ export async function generateWeeklyReportAction(data: {
   Recent Journal Inputs:\n${journalsText}
   `;
 
-  const reportContent = await generateWeeklyReport(historyContext, name);
+  const reportContent = await generateWeeklyReport(historyContext, name, checkins, journals);
   return { reportContent };
 }
 
@@ -60,8 +60,7 @@ export async function generateWeeklyReportAction(data: {
  * 3. Fetch Heatmap Insight from Claude
  */
 export async function getHeatmapInsightAction(history: { date: string; stress: number }[]) {
-  const formattedHistory = history.map((h) => `${h.date}: Stress Index ${h.stress}/100`).join("\n");
-  return generateHeatmapInsight(formattedHistory);
+  return generateHeatmapInsight(history);
 }
 
 /**

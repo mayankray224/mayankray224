@@ -22,8 +22,19 @@ export const authOptions: NextAuthOptions = {
         const isDemoLogin = isDemo === "true" || (email === "demo@nazaraana.ai" && password === "demo123");
 
         if (isDemoLogin) {
+          const db = prisma;
+          if (!db) {
+            return {
+              id: "demo-user",
+              name: "Aarav Sharma",
+              email: "demo@nazaraana.ai",
+              language: "Hinglish",
+              theme: "light",
+              age: 19
+            };
+          }
           try {
-            let user = await prisma.user.findUnique({
+            let user = await db.user.findUnique({
               where: { email: "demo@nazaraana.ai" },
               include: { exams: true, subjects: true },
             });
@@ -31,7 +42,7 @@ export const authOptions: NextAuthOptions = {
             if (!user) {
               const hashedPassword = bcrypt.hashSync("demo123", 10);
               
-              user = await prisma.user.create({
+              user = await db.user.create({
                 data: {
                   email: "demo@nazaraana.ai",
                   password: hashedPassword,
@@ -58,7 +69,7 @@ export const authOptions: NextAuthOptions = {
               });
 
               const userRef = user.id;
-              await prisma.moodCheckin.createMany({
+              await db.moodCheckin.createMany({
                 data: [
                   { userId: userRef, moodText: "Mock test went bad, syllabus backlog is piling up", stressScore: 82, confidenceScore: 40, burnoutRisk: 75, moodScore: 45, createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000) },
                   { userId: userRef, moodText: "Felt very lonely. Talked to BhalAI, did a small breathing exercise.", stressScore: 68, confidenceScore: 50, burnoutRisk: 65, moodScore: 55, createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000) },
@@ -66,7 +77,7 @@ export const authOptions: NextAuthOptions = {
                 ]
               });
 
-              await prisma.journalEntry.createMany({
+              await db.journalEntry.createMany({
                 data: [
                   {
                     userId: userRef,
@@ -87,7 +98,7 @@ export const authOptions: NextAuthOptions = {
                 ]
               });
 
-              await prisma.streak.create({
+              await db.streak.create({
                 data: {
                   userId: userRef,
                   currentStreak: 3,
@@ -96,7 +107,7 @@ export const authOptions: NextAuthOptions = {
                 }
               });
 
-              await prisma.copingStrategy.createMany({
+              await db.copingStrategy.createMany({
                 data: [
                   { userId: userRef, strategyText: "Box Breathing (4-4-4): Calm exam anxiety under 2 minutes", helped: true },
                   { userId: userRef, strategyText: "Chai & Sigh: Walk to the local stall, take a long sigh.", helped: false },
@@ -123,8 +134,13 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Please specify your email and password.");
         }
 
+        const db = prisma;
+        if (!db) {
+          throw new Error("Database is not configured. Please use Demo Login!");
+        }
+
         try {
-          const user = await prisma.user.findUnique({
+          const user = await db.user.findUnique({
             where: { email },
           });
 

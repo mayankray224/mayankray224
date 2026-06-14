@@ -7,7 +7,7 @@ import { Language } from "@/lib/translations";
 import { useHydration } from "@/hooks/useHydration";
 import { PageSkeleton } from "@/components/shared/SkeletonLoader";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Check, Calendar, Sparkles } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, Calendar, Sparkles, BookOpen, MessageSquare, Heart, GraduationCap } from "lucide-react";
 
 const EXAM_OPTIONS = [
   "NEET",
@@ -53,10 +53,14 @@ export default function Onboarding() {
 
   // Route protection
   useEffect(() => {
-    if (hydrated && !store.isAuthenticated) {
-      router.push("/");
+    if (hydrated) {
+      if (!store.isAuthenticated) {
+        router.push("/");
+      } else if (store.onboardingCompleted) {
+        router.push("/dashboard");
+      }
     }
-  }, [hydrated, store.isAuthenticated, router]);
+  }, [hydrated, store.isAuthenticated, store.onboardingCompleted, router]);
 
   if (!hydrated || !store.isAuthenticated) {
     return <PageSkeleton />;
@@ -110,7 +114,7 @@ export default function Onboarding() {
   };
 
   return (
-    <div className="min-h-screen bg-warm-bg flex flex-col justify-between p-4 md:p-8 font-hind text-warm-text">
+    <div className="min-h-screen bg-gradient-to-tr from-[#FFF7EC] to-[#FDF1E2] flex flex-col justify-between p-4 md:p-8 font-hind text-[#2C2C2C]">
       {/* Header */}
       <header className="max-w-xl mx-auto w-full flex items-center justify-between py-4" role="banner">
         <div className="flex items-center gap-1.5">
@@ -138,7 +142,7 @@ export default function Onboarding() {
 
       {/* Main card container */}
       <main className="max-w-md mx-auto w-full my-auto py-6" role="main">
-        <div className="bg-[#FFFDFB] dark:bg-dark-card border border-warm-border dark:border-dark-border rounded-3xl p-6 md:p-8 shadow-lg warm-shadow relative overflow-hidden">
+        <div className="bg-[#FFFFFF] border-2 border-[#F5E6D3] rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden text-[#2C2C2C]">
           
           {error && (
             <div className="mb-4 p-3 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl text-xs" role="alert">
@@ -158,14 +162,14 @@ export default function Onboarding() {
                 transition={{ duration: 0.25 }}
                 className="space-y-6"
               >
-                <div className="space-y-2 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto">
-                    <Sparkles className="w-6 h-6" aria-hidden="true" />
+                <div className="space-y-3 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-500 border border-amber-200 flex items-center justify-center mx-auto mb-2 shadow-sm animate-bounce">
+                    <Sparkles className="w-8 h-8" aria-hidden="true" />
                   </div>
-                  <h2 className="text-2xl font-bold">
-                    What should we call you?
+                  <h2 className="text-2xl font-extrabold text-[#2C2C2C] tracking-tight">
+                    What should we call you, beta?
                   </h2>
-                  <p className="text-sm text-warm-text/60">
+                  <p className="text-sm text-gray-500 font-medium">
                     BhalAI will address you by this name.
                   </p>
                 </div>
@@ -177,7 +181,7 @@ export default function Onboarding() {
                     setName(e.target.value);
                     setError("");
                   }}
-                  className="w-full px-4 py-3.5 bg-warm-bg/50 border border-warm-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-lg text-center"
+                  className="w-full px-4 py-3 bg-gray-50 border-2 border-[#F5E6D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-lg text-center text-[#2C2C2C] font-semibold"
                   aria-label="Name"
                 />
               </motion.div>
@@ -194,11 +198,14 @@ export default function Onboarding() {
                 transition={{ duration: 0.25 }}
                 className="space-y-6"
               >
-                <div className="space-y-2 text-center">
-                  <h2 className="text-2xl font-bold">
+                <div className="space-y-3 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-50 text-blue-500 border border-blue-200 flex items-center justify-center mx-auto mb-2 shadow-sm">
+                    <GraduationCap className="w-8 h-8" aria-hidden="true" />
+                  </div>
+                  <h2 className="text-2xl font-extrabold text-[#2C2C2C] tracking-tight">
                     Which exam are you preparing for?
                   </h2>
-                  <p className="text-sm text-warm-text/60">
+                  <p className="text-sm text-gray-500 font-medium">
                     Select your primary target exam.
                   </p>
                 </div>
@@ -212,14 +219,14 @@ export default function Onboarding() {
                           setExamType(exam);
                           setError("");
                         }}
-                        className={`p-3 rounded-xl border text-sm font-medium transition-all text-left flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-primary ${
+                        className={`p-3 rounded-xl border-2 text-sm font-semibold transition-all text-left flex justify-between items-center focus:outline-none focus:ring-2 focus:ring-primary ${
                           isSelected
                             ? "bg-primary/10 border-primary text-primary"
-                            : "bg-white border-warm-border text-warm-text hover:bg-warm-bg/50"
+                            : "bg-white border-gray-200 text-[#2C2C2C] hover:bg-gray-50"
                         }`}
                       >
                         <span>{exam}</span>
-                        {isSelected && <Check className="w-4 h-4" />}
+                        {isSelected && <Check className="w-4 h-4 text-primary stroke-[3]" />}
                       </button>
                     );
                   })}
@@ -238,11 +245,14 @@ export default function Onboarding() {
                 transition={{ duration: 0.25 }}
                 className="space-y-6"
               >
-                <div className="space-y-2 text-center">
-                  <h2 className="text-2xl font-bold">
+                <div className="space-y-3 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-500 border border-emerald-200 flex items-center justify-center mx-auto mb-2 shadow-sm">
+                    <MessageSquare className="w-8 h-8" aria-hidden="true" />
+                  </div>
+                  <h2 className="text-2xl font-extrabold text-[#2C2C2C] tracking-tight">
                     Which language do you prefer?
                   </h2>
-                  <p className="text-sm text-warm-text/60">
+                  <p className="text-sm text-gray-500 font-medium">
                     BhalAI can speak, switch codes, and read in your language.
                   </p>
                 </div>
@@ -253,14 +263,14 @@ export default function Onboarding() {
                       <button
                         key={lang.name}
                         onClick={() => setLanguage(lang.name)}
-                        className={`p-3 rounded-xl border text-sm font-medium transition-all text-center flex flex-col justify-center items-center focus:outline-none focus:ring-2 focus:ring-primary ${
+                        className={`p-3 rounded-xl border-2 text-sm font-bold transition-all text-center flex flex-col justify-center items-center focus:outline-none focus:ring-2 focus:ring-primary ${
                           isSelected
                             ? "bg-secondary/15 border-secondary text-secondary-dark"
-                            : "bg-white border-warm-border text-warm-text hover:bg-warm-bg/50"
+                            : "bg-white border-gray-200 text-[#2C2C2C] hover:bg-gray-50"
                         }`}
                       >
                         <span className="font-bold text-base">{lang.label}</span>
-                        <span className="text-xs text-warm-text/50">{lang.name}</span>
+                        <span className="text-xs text-gray-500 font-medium">{lang.name}</span>
                       </button>
                     );
                   })}
@@ -279,11 +289,14 @@ export default function Onboarding() {
                 transition={{ duration: 0.25 }}
                 className="space-y-6"
               >
-                <div className="space-y-2 text-center">
-                  <h2 className="text-2xl font-bold">
+                <div className="space-y-3 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center mx-auto mb-2 shadow-sm">
+                    <BookOpen className="w-8 h-8" aria-hidden="true" />
+                  </div>
+                  <h2 className="text-2xl font-extrabold text-[#2C2C2C] tracking-tight">
                     Which subject is your comfort zone?
                   </h2>
-                  <p className="text-sm text-warm-text/60">
+                  <p className="text-sm text-gray-500 font-medium">
                     The subject that gives you confidence on low stress days.
                   </p>
                 </div>
@@ -295,7 +308,7 @@ export default function Onboarding() {
                     setComfortSubject(e.target.value);
                     setError("");
                   }}
-                  className="w-full px-4 py-3 bg-warm-bg/50 border border-warm-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-lg text-center"
+                  className="w-full px-4 py-3 bg-gray-50 border-2 border-[#F5E6D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-lg text-center text-[#2C2C2C] font-semibold"
                   aria-label="Comfort Subject"
                 />
                 <div className="flex flex-wrap gap-2 justify-center">
@@ -306,7 +319,7 @@ export default function Onboarding() {
                         setComfortSubject(sub);
                         setError("");
                       }}
-                      className="px-3 py-1.5 rounded-full border border-warm-border bg-white text-xs text-warm-text hover:bg-warm-bg/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="px-3 py-1.5 rounded-full border border-gray-200 bg-white text-xs font-semibold text-[#2C2C2C] hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary"
                     >
                       {sub}
                     </button>
@@ -326,14 +339,14 @@ export default function Onboarding() {
                 transition={{ duration: 0.25 }}
                 className="space-y-6"
               >
-                <div className="space-y-2 text-center">
-                  <div className="w-12 h-12 rounded-2xl bg-accent/15 text-accent flex items-center justify-center mx-auto">
-                    <Calendar className="w-6 h-6" aria-hidden="true" />
+                <div className="space-y-3 text-center">
+                  <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-500 border border-rose-200 flex items-center justify-center mx-auto mb-2 shadow-sm">
+                    <Calendar className="w-8 h-8" aria-hidden="true" />
                   </div>
-                  <h2 className="text-2xl font-bold">
+                  <h2 className="text-2xl font-extrabold text-[#2C2C2C] tracking-tight">
                     When is your next big exam?
                   </h2>
-                  <p className="text-sm text-warm-text/60">
+                  <p className="text-sm text-gray-500 font-medium">
                     We use this to activate pre-exam support 72 hours before.
                   </p>
                 </div>
@@ -345,7 +358,7 @@ export default function Onboarding() {
                     setExamDate(e.target.value);
                     setError("");
                   }}
-                  className="w-full px-4 py-3 bg-warm-bg/50 border border-warm-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-lg text-center font-bold font-lato"
+                  className="w-full px-4 py-3 bg-gray-50 border-2 border-[#F5E6D3] rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-lg text-center font-bold font-lato text-[#2C2C2C]"
                   aria-label="Exam Date"
                 />
               </motion.div>

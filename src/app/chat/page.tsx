@@ -143,7 +143,7 @@ export default function ChatPage() {
             <div>
               <div className="font-bold text-sm text-warm-text dark:text-white flex items-center gap-1.5">
                 <span>{t.bhalAI}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 aria-hidden="true"></span>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
               </div>
               <div className="text-[10px] text-warm-text/50 dark:text-gray-400">Empathetic Wellness Companion</div>
             </div>

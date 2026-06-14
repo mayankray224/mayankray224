@@ -80,7 +80,8 @@ export default function LandingClient() {
       if (res.success) {
         setSuccess("Success! Preparing your dashboard...");
         setTimeout(() => {
-          if (store.onboardingCompleted) {
+          const freshStore = useStore.getState();
+          if (freshStore.onboardingCompleted) {
             router.push("/dashboard");
           } else {
             router.push("/onboarding");

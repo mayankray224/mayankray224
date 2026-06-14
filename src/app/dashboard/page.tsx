@@ -43,6 +43,9 @@ export default function Dashboard() {
   const [breathCount, setBreathCount] = useState(0);
   const [breathActive, setBreathActive] = useState(false);
 
+  // State for Developer Debug Panel
+  const [showDebug, setShowDebug] = useState(false);
+
   // Filter journals and checkins belonging to current user
   const userCheckins = store.localMoodCheckins.filter((c) => c.userId === store.userId);
   const userJournals = store.localJournals.filter((j) => j.userId === store.userId);
@@ -375,8 +378,8 @@ export default function Dashboard() {
               </div>
             </div>
           ) : (
-            <div className="bg-white dark:bg-dark-card border border-warm-border dark:border-dark-border p-8 rounded-3xl text-center text-warm-text/60 text-xs shadow-sm">
-              Let's get to know you a little better before generating insights. Log your first check-in above to seed your mental readiness index!
+            <div className="bg-white dark:bg-dark-card border border-warm-border dark:border-dark-border p-8 rounded-3xl text-center text-warm-text/60 text-xs shadow-sm font-semibold">
+              Let's get to know you better before calculating your readiness.
             </div>
           )}
 
@@ -497,6 +500,182 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Collapsible Developer Debug Panel */}
+      <div className="mt-8 bg-white dark:bg-dark-card border border-warm-border dark:border-dark-border rounded-3xl p-5 shadow-sm warm-shadow space-y-4">
+        <button
+          onClick={() => setShowDebug(!showDebug)}
+          className="w-full flex items-center justify-between text-warm-text dark:text-white font-bold text-sm uppercase tracking-wider focus:outline-none"
+        >
+          <span className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-orange-100 dark:bg-orange-950/20 text-orange-600">🔧</span>
+            <span>Developer Debug Panel (Verification)</span>
+          </span>
+          <span className="text-xs text-warm-text/50">{showDebug ? "Collapse ▲" : "Expand ▼"}</span>
+        </button>
+
+        {showDebug && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-warm-border/50 text-xs animate-fade-in">
+            {/* Left side: Stats Table */}
+            <div className="space-y-2">
+              <h4 className="font-bold text-warm-text/60 uppercase text-[10px] tracking-wide">Live Store State</h4>
+              <div className="border border-warm-border/60 dark:border-dark-border/60 rounded-xl overflow-hidden divide-y divide-warm-border/60 dark:divide-dark-border/60">
+                <div className="p-2.5 flex justify-between">
+                  <span className="text-warm-text/50">Current User:</span>
+                  <span className="font-semibold text-warm-text dark:text-white">{store.name || "None"} ({store.email || "No email"})</span>
+                </div>
+                <div className="p-2.5 flex justify-between">
+                  <span className="text-warm-text/50">User ID:</span>
+                  <span className="font-mono text-[10px] text-warm-text/75">{store.userId || "None"}</span>
+                </div>
+                <div className="p-2.5 flex justify-between">
+                  <span className="text-warm-text/50">Onboarding Status:</span>
+                  <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${store.onboardingCompleted ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
+                    {store.onboardingCompleted ? "COMPLETED" : "PENDING"}
+                  </span>
+                </div>
+                <div className="p-2.5 flex justify-between">
+                  <span className="text-warm-text/50">Is Demo User:</span>
+                  <span className="font-semibold">{store.isDemoUser ? "Yes" : "No"}</span>
+                </div>
+                <div className="p-2.5 flex justify-between">
+                  <span className="text-warm-text/50">Journal Count:</span>
+                  <span className="font-bold text-warm-text">{userJournals.length} entries</span>
+                </div>
+                <div className="p-2.5 flex justify-between">
+                  <span className="text-warm-text/50">Chat Messages Count:</span>
+                  <span className="font-bold text-warm-text">{store.localChatMessages.filter(m => m.userId === store.userId).length} msgs</span>
+                </div>
+                <div className="p-2.5 flex justify-between">
+                  <span className="text-warm-text/50">Stress Records (Check-ins):</span>
+                  <span className="font-bold text-warm-text">{userCheckins.length} records</span>
+                </div>
+                <div className="p-2.5 flex justify-between">
+                  <span className="text-warm-text/50">Crisis Flagged State:</span>
+                  <span className={`px-2 py-0.5 rounded-md font-bold text-[10px] ${store.isCrisisFlagged ? "bg-rose-100 text-rose-800 animate-pulse" : "bg-gray-100 text-gray-800"}`}>
+                    {store.isCrisisFlagged ? "CRISIS ACTIVE" : "NORMAL"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right side: Developer Tools */}
+            <div className="space-y-4">
+              <h4 className="font-bold text-warm-text/60 uppercase text-[10px] tracking-wide">Debug Simulation Actions</h4>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Seed mock entries over past 7 days to let judges verify reports/heatmap immediately
+                    const dates = [];
+                    const today = new Date();
+                    for (let i = 6; i >= 0; i--) {
+                      const d = new Date(today);
+                      d.setDate(today.getDate() - i);
+                      dates.push(d);
+                    }
+
+                    // Add check-ins
+                    dates.forEach((date, index) => {
+                      const mockCheckin = {
+                        id: "mock-checkin-" + Math.random().toString(36).substring(2, 9),
+                        userId: store.userId,
+                        stressScore: index === 3 ? 9 : 4,
+                        energyScore: 5,
+                        sleepHours: 8,
+                        confidenceScore: 6,
+                        moodText: index === 3 ? "Tired, backlog syllabus" : "Solved some physics, doing okay",
+                        createdAt: date.toISOString()
+                      };
+                      useStore.setState((state) => ({
+                        localMoodCheckins: [mockCheckin, ...state.localMoodCheckins]
+                      }));
+                    });
+
+                    // Add journals
+                    dates.slice(0, 3).forEach((date, index) => {
+                      const mockJournal = {
+                        id: "mock-journal-" + Math.random().toString(36).substring(2, 9),
+                        userId: store.userId,
+                        content: index === 0 
+                          ? "I am extremely worried about my mock tests and JEE Advanced prep." 
+                          : "Spent the evening revising math and solving practice papers.",
+                        emotionSummary: index === 0 ? "Fear of failure" : "steady revision flow",
+                        tags: index === 0 ? ["jee-prep", "mock-test"] : ["math", "steady"],
+                        stressScore: index === 0 ? 82 : 35,
+                        burnoutRisk: index === 0 ? 75 : 30,
+                        confidenceScore: index === 0 ? 30 : 65,
+                        primaryEmotion: index === 0 ? "Fear" : "Balanced",
+                        detectedTriggers: index === 0 ? ["Mock test anxiety"] : [],
+                        positiveIndicators: index === 0 ? [] : ["Consistency"],
+                        createdAt: date.toISOString()
+                      };
+                      useStore.setState((state) => ({
+                        localJournals: [mockJournal, ...state.localJournals]
+                      }));
+                    });
+                    
+                    alert("Simulation Success! Seeded 7 days of mood check-ins and 3 journal entries into the store for this user.");
+                  }}
+                  className="p-3 bg-gradient-to-r from-primary to-accent hover:from-primary-dark hover:to-accent-dark text-white rounded-xl text-center font-bold shadow-sm"
+                >
+                  Seed 7-Day History
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    store.setIsCrisisFlagged(!store.isCrisisFlagged);
+                  }}
+                  className="p-3 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-center font-bold shadow-sm"
+                >
+                  Toggle Crisis State
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const nextVal = !store.onboardingCompleted;
+                    useStore.setState({ onboardingCompleted: nextVal });
+                    // Sync back into localUsers list for the current logged-in account
+                    const currentUserId = store.userId;
+                    const updatedUsers = store.localUsers.map((u) => {
+                      if (u.userId === currentUserId) {
+                        return {
+                          ...u,
+                          onboardingCompleted: nextVal,
+                        };
+                      }
+                      return u;
+                    });
+                    useStore.setState({ localUsers: updatedUsers });
+                  }}
+                  className="p-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-center font-bold shadow-sm"
+                >
+                  Toggle Onboarding
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm("Are you sure you want to clear the entire store? This resets everything.")) {
+                      localStorage.clear();
+                      window.location.href = "/";
+                    }
+                  }}
+                  className="p-3 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-xl text-center font-bold shadow-sm"
+                >
+                  Hard Reset LocalStorage
+                </button>
+              </div>
+              <p className="text-[10px] text-warm-text/40 leading-relaxed italic">
+                Use the Seed button to generate mock history points. This will populate the Heatmap grid and allow BhalAI to analyze weekly reports instantly.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </AppShell>
   );

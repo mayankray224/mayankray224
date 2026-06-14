@@ -45,12 +45,16 @@ export default function JournalPage() {
       });
 
       if (res && res.analysis) {
-        // Save to Zustand store
         store.addJournal(
           content.trim(),
           res.analysis.emotionSummary,
           res.analysis.tags || [],
-          res.analysis.stressScore || 50
+          res.analysis.stressScore || 50,
+          res.analysis.burnoutRisk || 50,
+          res.analysis.confidenceScore || 50,
+          res.analysis.primaryEmotion || "Neutral",
+          res.analysis.detectedTriggers || [],
+          res.analysis.positiveIndicators || []
         );
 
         setLatestAnalysis(res.analysis);
@@ -79,7 +83,17 @@ export default function JournalPage() {
         tags: ["journaled", "offline"]
       };
 
-      store.addJournal(content.trim(), fallbackAnalysis.emotionSummary, fallbackAnalysis.tags, fallbackAnalysis.stressScore);
+      store.addJournal(
+        content.trim(),
+        fallbackAnalysis.emotionSummary,
+        fallbackAnalysis.tags,
+        fallbackAnalysis.stressScore,
+        fallbackAnalysis.burnoutRisk,
+        50, // confidence
+        "Neutral", // primaryEmotion
+        [], // detectedTriggers
+        [] // positiveIndicators
+      );
       setLatestAnalysis(fallbackAnalysis);
       setContent("");
       setShowCelebration(true);
@@ -181,7 +195,7 @@ export default function JournalPage() {
                   </div>
                   <div>
                     <div className="text-[10px] text-warm-text/50 uppercase font-bold tracking-wider font-lato">Burnout risk</div>
-                    <div className="text-xl font-extrabold text-warm-text font-lato">{latestAnalysis.stressScore}/100</div>
+                    <div className="text-xl font-extrabold text-warm-text font-lato">{latestAnalysis.burnoutRisk}/100</div>
                   </div>
                   <div className="col-span-2 md:col-span-1">
                     <div className="text-[10px] text-warm-text/50 uppercase font-bold tracking-wider font-lato">Extracted Tags</div>

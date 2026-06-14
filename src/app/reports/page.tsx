@@ -8,6 +8,7 @@ import { generateWeeklyReportAction } from "@/app/actions";
 import { Sparkles, Download, Share2, FileText, CheckCircle } from "lucide-react";
 import { useHydration } from "@/hooks/useHydration";
 import { PageSkeleton } from "@/components/shared/SkeletonLoader";
+import { calculateWellnessMetrics } from "@/lib/assessmentEngine";
 
 export default function ReportsPage() {
   const store = useStore();
@@ -74,20 +75,40 @@ export default function ReportsPage() {
     canvas.width = 800;
     canvas.height = 500;
 
-    // Background gradient
+    // Calculate dynamic values
+    const metrics = calculateWellnessMetrics(userCheckins, userJournals);
+    const avgStress = metrics.stressScore;
+    const readiness = metrics.readinessScore;
+
+    // Pick dynamic BhalAI quote based on journals
+    let bhalaiQuote = "Syllabus backlogs are a part of every student's journey. Do not compare your day 1 with someone else's day 100. BhalAI is always proud of your effort.";
+    if (userJournals.length > 0) {
+      const latestText = userJournals[0].content.toLowerCase();
+      if (latestText.includes("breakup") || latestText.includes("relationship")) {
+        bhalaiQuote = "Beta, hearts take time to heal. Studies can wait, don't ignore your emotional healing. Take care of yourself.";
+      } else if (latestText.includes("mock") || latestText.includes("fail") || latestText.includes("score")) {
+        bhalaiQuote = "Mock test scores do not define your intelligence or destiny. Take a deep breath, review your mistakes gently, and relax.";
+      } else if (latestText.includes("parent") || latestText.includes("compare")) {
+        bhalaiQuote = "Your efforts are valuable, even if family doesn't see them yet. Just focus on your own capacity and study step-by-step.";
+      } else if (store.isCrisisFlagged) {
+        bhalaiQuote = "It sounds like you are carrying something extremely heavy right now. Please know you are precious and not alone.";
+      }
+    }
+
+    // Background gradient with Terracotta/Orange accents
     const gradient = ctx.createLinearGradient(0, 0, 800, 500);
-    gradient.addColorStop(0, "#FDF8F2");
-    gradient.addColorStop(1, "#FFF7EC");
+    gradient.addColorStop(0, "#FFFDFB");
+    gradient.addColorStop(1, "#FFEBE5"); // terracotta warm hint
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, 800, 500);
 
     // Border
-    ctx.strokeStyle = "#F5E6D3";
+    ctx.strokeStyle = "#E05A36"; // warm terracotta border
     ctx.lineWidth = 14;
     ctx.strokeRect(7, 7, 786, 486);
 
     // Header logo
-    ctx.fillStyle = "#F4A426";
+    ctx.fillStyle = "#E05A36"; 
     ctx.fillRect(40, 40, 45, 45);
     
     ctx.fillStyle = "white";
@@ -98,53 +119,72 @@ export default function ReportsPage() {
     ctx.font = "bold 28px Georgia, serif";
     ctx.fillText("Nazaraana", 100, 72);
 
-    ctx.font = "normal 14px sans-serif";
-    ctx.fillStyle = "#7DB99A";
-    ctx.fillText("Weekly Wellness Reflection", 600, 70);
+    ctx.font = "bold 13px sans-serif";
+    ctx.fillStyle = "#E05A36";
+    ctx.fillText("Weekly Wellness Reflection Card", 550, 70);
 
     // Profile Details
     ctx.fillStyle = "#2C2C2C";
     ctx.font = "bold 32px sans-serif";
-    ctx.fillText(`Kaise ho, ${store.name || "Beta"}? 🌸`, 40, 150);
+    ctx.fillText(`Kaise ho, ${store.name || "Beta"}? 🌸`, 40, 145);
 
-    ctx.fillStyle = "#7D7D7D";
-    ctx.font = "normal 16px sans-serif";
-    ctx.fillText(`Target Exam: ${store.examType || "JEE/NEET Prep"}`, 40, 185);
+    ctx.fillStyle = "#5C5C5C";
+    ctx.font = "bold 15px sans-serif";
+    ctx.fillText(`Target Exam: ${store.examType || "Exam Prep"} | Readiness Score: ${readiness}/100`, 40, 180);
 
-    // Streak Count Badge
-    ctx.fillStyle = "#FFE6C2";
+    // Stress metric display
+    ctx.fillStyle = "#2C2C2C";
+    ctx.font = "bold 14px sans-serif";
+    ctx.fillText(`Average Stress: ${avgStress}/100`, 40, 215);
+
+    // Draw active streak badge
+    ctx.fillStyle = "#FFF0EB";
     ctx.beginPath();
-    ctx.roundRect(40, 210, 170, 36, 18);
+    ctx.roundRect(470, 195, 290, 36, 18);
     ctx.fill();
 
-    ctx.fillStyle = "#D98616";
+    ctx.fillStyle = "#E05A36";
     ctx.font = "bold 13px sans-serif";
-    ctx.fillText(`🔥 STREAK: ${store.streakCount} DAYS`, 56, 233);
+    ctx.fillText(`🔥 STREAK PRESERVED: ${store.streakCount} DAYS`, 490, 218);
 
-    // Reflection Text card background
+    // Reflection card background
     ctx.fillStyle = "white";
     ctx.beginPath();
-    ctx.roundRect(40, 270, 720, 180, 24);
+    ctx.roundRect(40, 260, 720, 190, 24);
     ctx.fill();
     ctx.lineWidth = 1.5;
     ctx.strokeStyle = "#F5E6D3";
     ctx.stroke();
 
-    ctx.fillStyle = "#F4A426";
+    ctx.fillStyle = "#E05A36";
     ctx.font = "bold 13px sans-serif";
-    ctx.fillText("BHALAI'S MESSAGE OF CARE FOR YOU", 65, 305);
+    ctx.fillText("BHALAI'S MESSAGE OF CARE FOR YOU", 65, 295);
 
     ctx.fillStyle = "#2C2C2C";
     ctx.font = "italic 16px Georgia, serif";
-    
-    const textLines = [
-      `"Syllabus backlogs are a part of every student's journey. Do not compare your`,
-      `day 1 with someone else's day 100. You are doing your absolute best in a`,
-      `very demanding phase of life. Sleep well today, BhalAI is proud of your effort."`
-    ];
-    textLines.forEach((line, index) => {
-      ctx.fillText(line, 65, 345 + index * 28);
-    });
+
+    // Text Wrapping Helper
+    const wrapText = (text: string, x: number, y: number, maxWidth: number, lineHeight: number) => {
+      const words = text.split(" ");
+      let line = "";
+      let currentY = y;
+      
+      for (let n = 0; n < words.length; n++) {
+        const testLine = line + words[n] + " ";
+        const metrics = ctx.measureText(testLine);
+        const testWidth = metrics.width;
+        if (testWidth > maxWidth && n > 0) {
+          ctx.fillText(line, x, currentY);
+          line = words[n] + " ";
+          currentY += lineHeight;
+        } else {
+          line = testLine;
+        }
+      }
+      ctx.fillText(line, x, currentY);
+    };
+
+    wrapText(`"${bhalaiQuote}"`, 65, 335, 670, 28);
 
     // Save as link and download
     const dataURL = canvas.toDataURL("image/png");

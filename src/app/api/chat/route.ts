@@ -36,6 +36,8 @@ export async function POST(req: NextRequest) {
       comfortSubject: comfortSubject,
       language: language,
       lastMoodScore: 65, // default baseline
+      checkins: memory?.checkins || [],
+      journals: memory?.journals || [],
       additionalSystemPrompt: `
 You are BhalAI, a caring, warm, maternal wellness companion for high-stakes exam aspirants in India.
 Current student context:

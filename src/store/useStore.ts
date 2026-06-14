@@ -23,6 +23,11 @@ export interface JournalEntry {
   emotionSummary?: string;
   tags: string[];
   stressScore: number;
+  burnoutRisk?: number;
+  confidenceScore?: number;
+  primaryEmotion?: string;
+  detectedTriggers?: string[];
+  positiveIndicators?: string[];
   createdAt: string;
 }
 
@@ -102,7 +107,17 @@ interface NazaraanaState {
   completeOnboarding: (data: { name: string; examType: string; examDate: string; comfortSubject: string; language: Language }) => void;
 
   // Data Operations
-  addJournal: (content: string, emotionSummary: string, tags: string[], stressScore: number) => void;
+  addJournal: (
+    content: string,
+    emotionSummary: string,
+    tags: string[],
+    stressScore: number,
+    burnoutRisk?: number,
+    confidenceScore?: number,
+    primaryEmotion?: string,
+    detectedTriggers?: string[],
+    positiveIndicators?: string[]
+  ) => void;
   addCheckin: (stress: number, energy: number, sleep: number, confidence: number, text: string) => void;
   addChatMessage: (role: "user" | "assistant", content: string) => void;
   clearChat: () => void;
@@ -239,19 +254,49 @@ export const useStore = create<NazaraanaState>()(
 
       // Demo User Activation
       loginDemoUser: () => {
-        set({
-          userId: "demo-user-id",
-          name: "",
-          email: "demo@nazaraana.ai",
-          language: "English",
-          examType: "",
-          examDate: "",
-          comfortSubject: "",
-          onboardingCompleted: false,
-          isAuthenticated: true,
-          isDemoUser: true,
-          streakCount: 0,
-        });
+        const users = get().localUsers;
+        const existingDemo = users.find((u) => u.email.toLowerCase() === "demo@nazaraana.ai");
+        if (existingDemo) {
+          set({
+            userId: existingDemo.userId,
+            name: existingDemo.name,
+            email: existingDemo.email,
+            language: existingDemo.language,
+            examType: existingDemo.examType,
+            examDate: existingDemo.examDate,
+            comfortSubject: existingDemo.comfortSubject,
+            onboardingCompleted: existingDemo.onboardingCompleted,
+            isAuthenticated: true,
+            isDemoUser: true,
+            streakCount: 1,
+          });
+        } else {
+          const newDemo: User = {
+            userId: "demo-user-id",
+            name: "",
+            email: "demo@nazaraana.ai",
+            examType: "",
+            examDate: "",
+            comfortSubject: "",
+            language: "English",
+            onboardingCompleted: false,
+            isDemoUser: true,
+          };
+          set({
+            localUsers: [...users, newDemo],
+            userId: "demo-user-id",
+            name: "",
+            email: "demo@nazaraana.ai",
+            language: "English",
+            examType: "",
+            examDate: "",
+            comfortSubject: "",
+            onboardingCompleted: false,
+            isAuthenticated: true,
+            isDemoUser: true,
+            streakCount: 0,
+          });
+        }
       },
 
       // Logout
@@ -266,7 +311,6 @@ export const useStore = create<NazaraanaState>()(
           onboardingCompleted: false,
           isAuthenticated: false,
           isDemoUser: false,
-          localChatMessages: [],
           isCrisisFlagged: false,
         });
       },
@@ -284,28 +328,36 @@ export const useStore = create<NazaraanaState>()(
           streakCount: 1,
         });
 
-        // Sync back into localUsers list if not demo user
-        if (!get().isDemoUser) {
-          const updatedUsers = get().localUsers.map((u) => {
-            if (u.userId === currentUserId) {
-              return {
-                ...u,
-                name: data.name,
-                examType: data.examType,
-                examDate: data.examDate,
-                comfortSubject: data.comfortSubject,
-                language: data.language,
-                onboardingCompleted: true,
-              };
-            }
-            return u;
-          });
-          set({ localUsers: updatedUsers });
-        }
+        // Sync back into localUsers list
+        const updatedUsers = get().localUsers.map((u) => {
+          if (u.userId === currentUserId) {
+            return {
+              ...u,
+              name: data.name,
+              examType: data.examType,
+              examDate: data.examDate,
+              comfortSubject: data.comfortSubject,
+              language: data.language,
+              onboardingCompleted: true,
+            };
+          }
+          return u;
+        });
+        set({ localUsers: updatedUsers });
       },
 
       // Data Operations
-      addJournal: (content, emotionSummary, tags, stressScore) => {
+      addJournal: (
+        content,
+        emotionSummary,
+        tags,
+        stressScore,
+        burnoutRisk,
+        confidenceScore,
+        primaryEmotion,
+        detectedTriggers,
+        positiveIndicators
+      ) => {
         const newEntry: JournalEntry = {
           id: "journal-" + Math.random().toString(36).substring(2, 9),
           userId: get().userId,
@@ -313,8 +365,25 @@ export const useStore = create<NazaraanaState>()(
           emotionSummary,
           tags,
           stressScore,
+          burnoutRisk: burnoutRisk || stressScore,
+          confidenceScore: confidenceScore || 50,
+          primaryEmotion: primaryEmotion || "Neutral",
+          detectedTriggers: detectedTriggers || [],
+          positiveIndicators: positiveIndicators || [],
           createdAt: new Date().toISOString(),
         };
+
+        // Auto-check crisis terms to immediately flag the user's state
+        const crisisKeywords = [
+          "suicide", "self harm", "end my life", "kill myself", "better off dead", 
+          "marna chahta", "want to die", "ending it all", "give up on life", "can't continue",
+          "want to end it", "don't want to live"
+        ];
+        const hasCrisis = crisisKeywords.some(keyword => content.toLowerCase().includes(keyword));
+        if (hasCrisis) {
+          set({ isCrisisFlagged: true });
+        }
+
         set((state) => ({
           localJournals: [newEntry, ...state.localJournals],
         }));

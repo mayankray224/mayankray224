@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from "framer-motion";
 interface HeatmapDay {
   date: string; // YYYY-MM-DD
   stressScore: number;
+  journals?: any[];
+  checkins?: any[];
 }
 
 export default function HeatmapPage() {
@@ -27,22 +29,37 @@ export default function HeatmapPage() {
 
   // Filter logs for current user
   const userCheckins = store.localMoodCheckins.filter((c) => c.userId === store.userId);
+  const userJournals = store.localJournals.filter((j) => j.userId === store.userId);
 
-  // Group checkins by date and calculate average stress score
+  // Group checkins and journals by date and calculate average stress score
   const getHeatmapData = (): HeatmapDay[] => {
-    const dateMap: Record<string, { total: number; count: number }> = {};
+    const dateMap: Record<string, { total: number; count: number; journals: any[]; checkins: any[] }> = {};
+    
     userCheckins.forEach((c) => {
       const dateStr = new Date(c.createdAt).toISOString().split("T")[0];
       if (!dateMap[dateStr]) {
-        dateMap[dateStr] = { total: 0, count: 0 };
+        dateMap[dateStr] = { total: 0, count: 0, journals: [], checkins: [] };
       }
       dateMap[dateStr].total += Number(c.stressScore) * 10; // scale 1-10 to 1-100
       dateMap[dateStr].count += 1;
+      dateMap[dateStr].checkins.push(c);
+    });
+
+    userJournals.forEach((j) => {
+      const dateStr = new Date(j.createdAt).toISOString().split("T")[0];
+      if (!dateMap[dateStr]) {
+        dateMap[dateStr] = { total: 0, count: 0, journals: [], checkins: [] };
+      }
+      dateMap[dateStr].total += Number(j.stressScore);
+      dateMap[dateStr].count += 1;
+      dateMap[dateStr].journals.push(j);
     });
 
     return Object.keys(dateMap).map((date) => ({
       date,
       stressScore: Math.round(dateMap[date].total / dateMap[date].count),
+      journals: dateMap[date].journals,
+      checkins: dateMap[date].checkins,
     }));
   };
 
@@ -64,7 +81,7 @@ export default function HeatmapPage() {
       }
     }
     loadAiInsight();
-  }, [userCheckins.length]);
+  }, [userCheckins.length, userJournals.length]);
 
   // Generate grid array ending today
   const getGridDays = () => {
@@ -80,6 +97,8 @@ export default function HeatmapPage() {
       days.push({
         date: dateStr,
         stressScore: matched ? matched.stressScore : 0, // 0 = no data
+        journals: matched ? matched.journals : [],
+        checkins: matched ? matched.checkins : [],
       });
     }
     return days;
@@ -89,18 +108,20 @@ export default function HeatmapPage() {
 
   const getStressColor = (score: number) => {
     if (score === 0) return "bg-gray-100 dark:bg-dark-bg/60 border border-warm-border/30 dark:border-dark-border text-transparent";
-    if (score < 40) return "bg-emerald-300 dark:bg-emerald-600 hover:scale-105";
-    if (score < 60) return "bg-amber-400 dark:bg-amber-600 hover:scale-105";
-    if (score < 80) return "bg-orange-400 dark:bg-orange-600 hover:scale-105";
-    return "bg-rose-500 dark:bg-rose-700 hover:scale-105";
+    if (score <= 20) return "bg-[#1b5e20] dark:bg-[#2e7d32] text-white hover:scale-105"; // Deep Green
+    if (score <= 40) return "bg-[#81c784] dark:bg-[#4caf50] text-gray-800 dark:text-white hover:scale-105"; // Light Green
+    if (score <= 60) return "bg-[#ffb74d] dark:bg-[#ff9800] text-gray-800 dark:text-white hover:scale-105"; // Amber
+    if (score <= 80) return "bg-[#ff7043] dark:bg-[#f4511e] text-white hover:scale-105"; // Orange
+    return "bg-[#c62828] dark:bg-[#d32f2f] text-white hover:scale-105 animate-pulse"; // Terracotta Red (burnout/crisis)
   };
 
   const getSeverityText = (score: number) => {
     if (score === 0) return "No entries";
-    if (score < 40) return "Green (Low Stress)";
-    if (score < 60) return "Yellow (Moderate Anxiety)";
-    if (score < 80) return "Orange (High Workload)";
-    return "Terracotta (Burnout Risk)";
+    if (score <= 20) return "Deep Green (Healthy Study Flow)";
+    if (score <= 40) return "Light Green (Active Prep)";
+    if (score <= 60) return "Yellow (Moderate Anxiety)";
+    if (score <= 80) return "Orange (High Workload Fatigue)";
+    return "Terracotta Red (Severe Distress / Burnout)";
   };
 
   const getCopingAdvice = (score: number) => {
@@ -161,9 +182,9 @@ export default function HeatmapPage() {
             </h3>
 
             <div className="space-y-4">
-              {userCheckins.length === 0 ? (
+              {heatmapData.length === 0 ? (
                 <div className="text-center py-12 text-xs text-warm-text/50">
-                  No stress check-ins logged yet. Perform a check-in or write a journal entry to build your wellness calendar.
+                  No stress check-ins or journal entries logged yet. Perform a check-in or write a journal entry to build your wellness calendar.
                 </div>
               ) : (
                 <div className="flex flex-wrap gap-2.5 justify-center md:justify-start">
@@ -232,20 +253,24 @@ export default function HeatmapPage() {
               <h4 className="text-xs font-bold text-warm-text/50 uppercase tracking-wide">Stress Metric Indicators</h4>
               <div className="space-y-2 text-xs">
                 <div className="flex items-center gap-2">
-                  <div className="w-3.5 h-3.5 rounded-md bg-emerald-300 dark:bg-emerald-600" />
-                  <span>&lt; 40 Score: Light study flow</span>
+                  <div className="w-3.5 h-3.5 rounded-md bg-[#1b5e20] dark:bg-[#2e7d32]" />
+                  <span>0 - 20 Score: Deep Green (Flow State)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3.5 h-3.5 rounded-md bg-amber-400 dark:bg-amber-600" />
-                  <span>40 - 60 Score: Micro-Pomodoro revision</span>
+                  <div className="w-3.5 h-3.5 rounded-md bg-[#81c784] dark:bg-[#4caf50]" />
+                  <span>21 - 40 Score: Light Green (Active prep)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3.5 h-3.5 rounded-md bg-orange-400 dark:bg-orange-600" />
-                  <span>60 - 80 Score: Step away, digital detox</span>
+                  <div className="w-3.5 h-3.5 rounded-md bg-[#ffb74d] dark:bg-[#ff9800]" />
+                  <span>41 - 60 Score: Amber (Warm Pomodoro)</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3.5 h-3.5 rounded-md bg-rose-500 dark:bg-rose-700" />
-                  <span>&gt; 80 Score: Burnout risk, mandatory sleep</span>
+                  <div className="w-3.5 h-3.5 rounded-md bg-[#ff7043] dark:bg-[#f4511e]" />
+                  <span>61 - 80 Score: Orange (Workload fatigue)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3.5 h-3.5 rounded-md bg-[#c62828] dark:bg-[#d32f2f]" />
+                  <span>81 - 100 Score: Terracotta Red (Crisis/Burnout)</span>
                 </div>
               </div>
             </div>
@@ -294,11 +319,36 @@ export default function HeatmapPage() {
                   </span>
                 </div>
 
-                <div className="space-y-2">
-                  <h4 className="text-[10px] text-warm-text/40 font-bold uppercase tracking-wider font-lato">Classification</h4>
-                  <p className="text-sm font-semibold text-warm-text dark:text-white">
-                    {getSeverityText(selectedDay.stressScore)}
-                  </p>
+                <div className="space-y-2 border-t border-warm-border/50 pt-3">
+                  <h4 className="text-[10px] text-warm-text/40 font-bold uppercase tracking-wider font-lato">Journal Excerpt</h4>
+                  {selectedDay.journals && selectedDay.journals.length > 0 ? (
+                    <p className="text-xs text-warm-text/90 dark:text-gray-200 bg-white dark:bg-dark-bg p-3 border border-warm-border/40 rounded-xl italic">
+                      "{selectedDay.journals[0].content.substring(0, 150)}..."
+                    </p>
+                  ) : (
+                    <p className="text-xs text-warm-text/50 italic">No journal logged on this day.</p>
+                  )}
+                </div>
+
+                <div className="space-y-2 border-t border-warm-border/50 pt-3">
+                  <h4 className="text-[10px] text-warm-text/40 font-bold uppercase tracking-wider font-lato">Detected Triggers</h4>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {selectedDay.journals && selectedDay.journals.length > 0 && selectedDay.journals[0].detectedTriggers && selectedDay.journals[0].detectedTriggers.length > 0 ? (
+                      selectedDay.journals[0].detectedTriggers.map((trig: string) => (
+                        <span key={trig} className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 text-[10px] font-bold">
+                          {trig}
+                        </span>
+                      ))
+                    ) : selectedDay.journals && selectedDay.journals.length > 0 && selectedDay.journals[0].tags.length > 0 ? (
+                      selectedDay.journals[0].tags.map((t: string) => (
+                        <span key={t} className="px-2.5 py-0.5 rounded-full bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 text-[10px] font-bold">
+                          {t}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-warm-text/50 italic">No specific triggers detected.</span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="space-y-2 border-t border-warm-border/50 pt-3">
