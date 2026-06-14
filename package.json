@@ -2,6 +2,10 @@
   "name": "nazaraana",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -15,7 +19,7 @@
     "bcryptjs": "^3.0.3",
     "framer-motion": "^11.3.0",
     "lucide-react": "^0.469.0",
-    "next": "15.3.3",
+    "next": "^15.3.4",
     "next-auth": "^4.24.14",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -32,7 +36,7 @@
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
     "eslint": "^8",
-    "eslint-config-next": "15.3.3",
+    "eslint-config-next": "^15.3.4",
     "jsdom": "^24.1.0",
     "postcss": "^8",
     "prisma": "^6.19.3",
@@ -40,6 +44,9 @@
     "ts-node": "^10.9.2",
     "typescript": "^5",
     "vitest": "^1.6.0"
+  },
+  "overrides": {
+    "next": "^15.3.4"
   },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
