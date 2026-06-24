@@ -32,11 +32,28 @@ export default {
           bg: "#1A1A2E",
           card: "#252538",
           border: "#32324D",
+        },
+        // Portfolio Specific Color System
+        portfolio: {
+          bg: "#06070A",
+          bgSec: "#10131A",
+          card: "#151A23",
+          gold: "#D4AF37",
+          purple: "#8B5CF6",
+          blue: "#60A5FA",
+          text: "#FFFFFF",
+          textSec: "#A0AEC0",
+          success: "#10B981",
+          warning: "#F59E0B",
         }
       },
       fontFamily: {
         hind: ["Hind", "sans-serif"],
         lato: ["Lato", "sans-serif"],
+        cinzel: ["Cinzel", "serif"],
+        cormorant: ["'Cormorant Garamond'", "serif"],
+        inter: ["Inter", "sans-serif"],
+        mono: ["'JetBrains Mono'", "monospace"],
       },
     },
   },
