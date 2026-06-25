@@ -18,7 +18,7 @@ export default function DynamicProjectPage() {
   useEffect(() => {
     // If the path corresponds to our highly custom static pages, let Next.js routing catch it.
     // However, if they are rendered here, we check:
-    if (id === "nazaraana" || id === "crunchyroll-ai" || id === "testbook" || id === "blinkit") {
+    if (id === "nazaraana" || id === "crunchyroll-ai" || id === "testbook" || id === "blinkit" || id === "warner-bros-discovery") {
       // These have dedicated layout files, let's redirect to ensure visitors get the rich interactive components.
       return;
     }
@@ -40,7 +40,7 @@ export default function DynamicProjectPage() {
   }, [id, router]);
 
   // If redirecting/loading
-  if (id === "nazaraana" || id === "crunchyroll-ai" || id === "testbook" || id === "blinkit") {
+  if (id === "nazaraana" || id === "crunchyroll-ai" || id === "testbook" || id === "blinkit" || id === "warner-bros-discovery") {
     return (
       <div className="min-h-screen bg-portfolio-bg flex items-center justify-center text-portfolio-gold font-mono text-xs">
         <div className="flex items-center gap-2">

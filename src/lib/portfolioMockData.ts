@@ -86,6 +86,28 @@ export const mockProjects: Project[] = [
     projectType: "AI Wellness Product"
   },
   {
+    id: "warner-bros-discovery",
+    title: "Warner Bros. Discovery",
+    tagline: "From Streaming Platform to Franchise Ecosystem",
+    category: "Product Strategy",
+    score: "Featured",
+    metrics: {
+      efficiency: 94,
+      alignment: 98,
+      security: 92,
+      impact: "IP-led growth strategy designed to transform subscribers into fans and monetize community, gaming, and licensing."
+    },
+    glowColor: "group-hover:shadow-[0_0_30px_rgba(212,175,55,0.35)]",
+    accentColor: "portfolio-gold",
+    slug: "warner-bros-discovery",
+    problem: "WBD doesn't have a content problem—it has a conversion problem. In India's price-sensitive market, owning Game of Thrones is not enough if users won't pay upfront.",
+    solution: "An IP-led growth strategy that lowers the entry barrier (free ad tier), builds fandom (community discussion Hubs), and monetizes the entire fan journey ecosystem.",
+    impactText: "IP-led growth strategy projecting 30% retention uplift in active viewer cohorts.",
+    frameworks: ["Ecosystem Value Modeling", "Franchise Loop Acquisition", "Cohort Conversion Dynamics"],
+    readTime: "6 min read",
+    projectType: "Product Strategy"
+  },
+  {
     id: "crunchyroll-ai",
     title: "Crunchyroll AI Recommendation Engine",
     tagline: "Context-Aware Anime Recommendations to Boost Session Lengths",
@@ -285,6 +307,19 @@ export const mockSkills: SkillCategory[] = [
 
 export const mockPensieveThoughts: PensieveThought[] = [
   {
+    id: "warner-bros-discovery-case",
+    title: "Case Study: Warner Bros. Discovery IP Ecosystem Strategy",
+    category: "Case Studies",
+    summary: "An IP-led growth strategy for Warner Bros. Discovery in India, converting price-sensitive viewers into lifetime fans through ecosystem monetization.",
+    date: "June 2026",
+    readTime: "6 min read",
+    content: `### 1. The Strategy
+Warner Bros. Discovery owns some of the world's most valuable premium entertainment IP (Harry Potter, DC, Game of Thrones, HBO Originals). Yet, in price-sensitive emerging markets like India, WBD faces slow subscriber growth due to competition from local content and sports.
+
+### 2. The Conversion Moat
+WBD doesn't have a content problem; it has a conversion problem. By introducing a low-barrier free tier and building interactive fan discussion hubs inside the platform, WBD can hook viewers, build active communities, and monetize the complete lifecycle (merchandise, games, events) instead of just subscriptions.`
+  },
+  {
     id: "crunchyroll-prd",
     title: "PRD: Crunchyroll AI Contextual Recommendation Engine",
     category: "PRDs",
@@ -351,6 +386,24 @@ We developed a tiered client-side validation system:
 ];
 
 export const mockKnowledgeNotes: KnowledgeNote[] = [
+  {
+    id: "wbd-ecosystem-framework",
+    title: "IP Ecosystem Value Modeling Framework",
+    category: "Product Strategy",
+    date: "2026-06-20",
+    tags: ["Product Strategy", "Monetization", "Ecosystem", "LTV"],
+    content: `### IP-Led Ecosystem Value Model
+Standard streaming platforms model user value purely on a recurring monthly subscription fee (SaaS equivalent). For premium IP holders, this under-monetizes fans. The ecosystem model maps user lifetime value across multiple nodes:
+
+\`\`\`
+[Streaming Acquisition] → [Community Engagement] → [Merchandise / Gaming] → [Events / Parks]
+\`\`\`
+
+### Operational Checklist for Franchise Loops
+- **Phase 1: Free Tier Funnel**: Lower the initial trial barrier to decrease customer acquisition cost (CAC).
+- **Phase 2: Fandom Retention Moat**: Introduce discussion forums and creator collabs to drive organic referrals and session time.
+- **Phase 3: Ecosystem Monetization**: Launch video game integrations, limited screenings, and local merchandise partnerships to scale average revenue per user (ARPU).`
+  },
   {
     id: "sql-pm-queries",
     title: "SQL Reference Guide for Product Managers",

@@ -175,80 +175,87 @@ export default function FeaturedProjects() {
             {projects
               .filter(p => p.id !== "nazaraana")
               .sort((a, b) => {
-                const order = ["crunchyroll-ai", "blinkit", "testbook"];
+                const order = ["warner-bros-discovery", "crunchyroll-ai", "blinkit", "testbook"];
                 return order.indexOf(a.id) - order.indexOf(b.id);
               })
-              .map((project) => (
-              <div
-                key={project.id}
-                className="group border border-portfolio-card hover:border-portfolio-purple/50 bg-portfolio-bgSec/40 backdrop-blur-md rounded-2xl p-6 md:p-8 flex flex-col justify-between transition-all duration-500 hover:-translate-y-1.5 hover:shadow-[0_0_25px_rgba(139,92,246,0.1)]"
-              >
-                <div>
-                  {/* Category Header */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-[9px] text-portfolio-purple tracking-wider uppercase">
-                        {project.projectType}
-                      </span>
-                      <span className="h-2 w-[1px] bg-portfolio-card" />
-                      <span className="font-mono text-[9px] text-portfolio-textSec/65">
-                        {project.readTime}
-                      </span>
-                    </div>
-                    {project.score && (
-                      <span className="font-mono text-[9px] border border-portfolio-gold/30 px-2 py-0.5 text-portfolio-gold rounded">
-                        {project.score}
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Title & Tagline */}
-                  <h3 className="font-cinzel text-lg md:text-xl text-white font-bold tracking-wide group-hover:text-portfolio-purple transition-colors">
-                    {project.title}
-                  </h3>
-                  <p className="font-cormorant italic text-sm text-portfolio-textSec mt-1 mb-4 leading-relaxed">
-                    {project.tagline}
-                  </p>
-
-                  {/* Problem & Solution Snippet */}
-                  <div className="space-y-3 pt-3 border-t border-portfolio-card/40 text-xs leading-relaxed">
-                    <div>
-                      <strong className="text-white">Problem:</strong> <span className="text-portfolio-textSec">{project.problem}</span>
-                    </div>
-                    <div>
-                      <strong className="text-portfolio-purple">Solution:</strong> <span className="text-portfolio-textSec">{project.solution}</span>
-                    </div>
-                    <div className="bg-portfolio-bg border border-portfolio-card/40 p-3 rounded-lg text-white italic">
-                      <strong>Impact:</strong> {project.impactText}
-                    </div>
-                  </div>
-
-                  {/* Frameworks tag list */}
-                  <div className="flex flex-wrap gap-1.5 my-4">
-                    {project.frameworks.slice(0, 2).map((fw) => (
-                      <span key={fw} className="text-[9px] font-mono bg-portfolio-bg px-2 py-0.5 rounded text-portfolio-textSec border border-portfolio-card">
-                        {fw}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-portfolio-card/40 mt-4">
-                  <div className="flex gap-4 font-mono text-[10px] text-white">
-                    {project.metrics.efficiency && <span>Eff: {project.metrics.efficiency}%</span>}
-                    {project.metrics.alignment && <span>Align: {project.metrics.alignment}%</span>}
-                  </div>
-                  <Link
-                    href={`/projects/${project.slug}`}
-                    onClick={() => addVisitedProject(project.id)}
-                    className="font-mono text-[9px] text-portfolio-purple group-hover:text-portfolio-blue tracking-widest uppercase flex items-center gap-1 transition-colors"
+              .map((project) => {
+                const isWBD = project.id === "warner-bros-discovery";
+                return (
+                  <div
+                    key={project.id}
+                    className={`group ${
+                      isWBD
+                        ? "wbd-cinematic-card hover:shadow-[0_0_35px_rgba(212,175,55,0.25)] border-portfolio-gold/20"
+                        : "border border-portfolio-card hover:border-portfolio-purple/50 bg-portfolio-bgSec/40 hover:shadow-[0_0_25px_rgba(139,92,246,0.1)] hover:-translate-y-1.5"
+                    } backdrop-blur-md rounded-2xl p-6 md:p-8 flex flex-col justify-between transition-all duration-500`}
                   >
-                    View Teardown
-                    <ArrowRight size={10} className="transition-transform group-hover:translate-x-1" />
-                  </Link>
-                </div>
-              </div>
-            ))}
+                    <div>
+                      {/* Category Header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <span className={`font-mono text-[9px] ${isWBD ? "text-portfolio-gold" : "text-portfolio-purple"} tracking-wider uppercase`}>
+                            {project.projectType}
+                          </span>
+                          <span className="h-2 w-[1px] bg-portfolio-card" />
+                          <span className="font-mono text-[9px] text-portfolio-textSec/65">
+                            {project.readTime}
+                          </span>
+                        </div>
+                        {project.score && (
+                          <span className={`font-mono text-[9px] border ${isWBD ? "border-portfolio-gold/50 text-portfolio-gold" : "border-portfolio-gold/30 text-portfolio-gold"} px-2 py-0.5 rounded`}>
+                            {project.score}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Title & Tagline */}
+                      <h3 className={`font-cinzel text-lg md:text-xl text-white font-bold tracking-wide ${isWBD ? "group-hover:text-portfolio-gold" : "group-hover:text-portfolio-purple"} transition-colors`}>
+                        {project.title}
+                      </h3>
+                      <p className="font-cormorant italic text-sm text-portfolio-textSec mt-1 mb-4 leading-relaxed">
+                        {project.tagline}
+                      </p>
+
+                      {/* Problem & Solution Snippet */}
+                      <div className="space-y-3 pt-3 border-t border-portfolio-card/40 text-xs leading-relaxed">
+                        <div>
+                          <strong className="text-white">Problem:</strong> <span className="text-portfolio-textSec">{project.problem}</span>
+                        </div>
+                        <div>
+                          <strong className={isWBD ? "text-portfolio-gold" : "text-portfolio-purple"}>Solution:</strong> <span className="text-portfolio-textSec">{project.solution}</span>
+                        </div>
+                        <div className="bg-portfolio-bg border border-portfolio-card/40 p-3 rounded-lg text-white italic">
+                          <strong>Impact:</strong> {project.impactText}
+                        </div>
+                      </div>
+
+                      {/* Frameworks tag list */}
+                      <div className="flex flex-wrap gap-1.5 my-4">
+                        {project.frameworks.slice(0, 2).map((fw) => (
+                          <span key={fw} className="text-[9px] font-mono bg-portfolio-bg px-2 py-0.5 rounded text-portfolio-textSec border border-portfolio-card">
+                            {fw}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t border-portfolio-card/40 mt-4">
+                      <div className="flex gap-4 font-mono text-[10px] text-white">
+                        {project.metrics.efficiency && <span>Eff: {project.metrics.efficiency}%</span>}
+                        {project.metrics.alignment && <span>Align: {project.metrics.alignment}%</span>}
+                      </div>
+                      <Link
+                        href={`/projects/${project.slug}`}
+                        onClick={() => addVisitedProject(project.id)}
+                        className={`font-mono text-[9px] ${isWBD ? "text-portfolio-gold group-hover:text-portfolio-gold/80" : "text-portfolio-purple group-hover:text-portfolio-blue"} tracking-widest uppercase flex items-center gap-1 transition-colors`}
+                      >
+                        {isWBD ? "View Case Study" : "View Teardown"}
+                        <ArrowRight size={10} className="transition-transform group-hover:translate-x-1" />
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
 
         </div>
